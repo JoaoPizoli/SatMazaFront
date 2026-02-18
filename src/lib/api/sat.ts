@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api"
-import type { SAT, SATStatus, SATDestino } from "@/types"
+import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData } from "@/types"
 
 /**
  * Buscar todas as SATs.
@@ -93,4 +93,43 @@ export async function changeStatusSat(id: string, status: SATStatus): Promise<SA
  */
 export async function redirecionarSat(id: string): Promise<SAT> {
   return apiPatch<SAT>(`/sat/${id}/redirecionar`, {})
+}
+
+/**
+ * Buscar estatísticas de SATs por setor.
+ */
+export async function getSatsBySector(filter: DashboardFilter): Promise<DashboardChartData[]> {
+  const query = new URLSearchParams()
+  if (filter.startDate) query.append('startDate', filter.startDate)
+  if (filter.endDate) query.append('endDate', filter.endDate)
+  if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
+  if (filter.produto) query.append('produto', filter.produto)
+
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/sector?${query.toString()}`)
+}
+
+/**
+ * Buscar estatísticas de SATs por representante.
+ */
+export async function getSatsByRepresentative(filter: DashboardFilter): Promise<DashboardChartData[]> {
+  const query = new URLSearchParams()
+  if (filter.startDate) query.append('startDate', filter.startDate)
+  if (filter.endDate) query.append('endDate', filter.endDate)
+  if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
+  if (filter.produto) query.append('produto', filter.produto)
+
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/representative?${query.toString()}`)
+}
+
+/**
+ * Buscar estatísticas de Top Produtos.
+ */
+export async function getTopProducts(filter: DashboardFilter): Promise<DashboardChartData[]> {
+  const query = new URLSearchParams()
+  if (filter.startDate) query.append('startDate', filter.startDate)
+  if (filter.endDate) query.append('endDate', filter.endDate)
+  if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
+  if (filter.produto) query.append('produto', filter.produto)
+
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/products?${query.toString()}`)
 }

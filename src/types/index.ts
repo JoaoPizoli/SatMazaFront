@@ -209,3 +209,15 @@ export type DashboardMetrics = {
   finalizadas: number
   total: number
 }
+
+export type DashboardFilter = {
+  startDate?: string
+  endDate?: string
+  representanteId?: number
+  produto?: string
+}
+
+export type DashboardChartData = {
+  name: string
+  value: number
+}
