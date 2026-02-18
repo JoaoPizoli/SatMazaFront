@@ -512,6 +512,25 @@ export function SatDetailDialog({
                 />
               </div>
               <EvidenciasGallery evidencias={sat.evidencias} />
+
+              {/* Exibir Laudo da AVT se existir (Visível para todos, inclusive Representante na Finalizada) */}
+              {sat.avt?.laudo && (
+                <div className="mt-5 border-t pt-4">
+                  <div className="flex items-center gap-2 mb-3">
+                    <FileText className="h-4 w-4 text-primary" />
+                    <p className="text-sm font-medium text-foreground">
+                      Laudo Técnico (AVT)
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <LaudoBadge laudo={sat.avt.laudo} />
+                    <div className="flex flex-col">
+                      <span className="text-xs font-medium">Status: {AVTStatusLabels[sat.avt.status]}</span>
+                      <span className="text-[10px] text-muted-foreground">{new Date(sat.avt.data).toLocaleDateString("pt-BR")}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
