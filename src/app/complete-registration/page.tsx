@@ -79,14 +79,16 @@ export default function CompleteRegistrationPage() {
             <Card className="w-full max-w-md">
                 <CardHeader>
                     <CardTitle>Completar Cadastro</CardTitle>
-                    <CardDescription>
+                    <CardDescription className="font-bold text-foreground">
                         É necessário atualizar seus dados e senha para continuar.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
-                            <Label htmlFor="nome">Nome Completo</Label>
+                            <Label htmlFor="nome" className="font-bold">
+                                Nome Completo <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="nome"
                                 placeholder="Seu nome"
@@ -96,7 +98,9 @@ export default function CompleteRegistrationPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="email">E-mail</Label>
+                            <Label htmlFor="email" className="font-bold">
+                                E-mail <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="email"
                                 placeholder="seu@email.com"
@@ -106,7 +110,9 @@ export default function CompleteRegistrationPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="senha">Nova Senha</Label>
+                            <Label htmlFor="senha" className="font-bold">
+                                Nova Senha <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="senha"
                                 type="password"
@@ -117,7 +123,9 @@ export default function CompleteRegistrationPage() {
                         </div>
 
                         <div className="space-y-2">
-                            <Label htmlFor="confirmSenha">Confirmar Senha</Label>
+                            <Label htmlFor="confirmSenha" className="font-bold">
+                                Confirmar Senha <span className="text-destructive">*</span>
+                            </Label>
                             <Input
                                 id="confirmSenha"
                                 type="password"
@@ -127,13 +135,13 @@ export default function CompleteRegistrationPage() {
                             {errors.confirmSenha && <p className="text-xs text-destructive">{errors.confirmSenha.message}</p>}
                         </div>
 
-                        <div className="flex gap-2 pt-2">
-                            <Button type="button" variant="outline" onClick={logout} className="w-full">
-                                Sair
-                            </Button>
+                        <div className="flex flex-col gap-3 pt-4">
                             <Button type="submit" className="w-full" disabled={isLoading}>
                                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Salvar e Continuar
+                            </Button>
+                            <Button type="button" variant="outline" onClick={logout} className="w-full">
+                                Sair
                             </Button>
                         </div>
                     </form>
