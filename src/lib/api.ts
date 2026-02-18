@@ -3,7 +3,7 @@
  * Injeta automaticamente o token JWT e trata erros globais (401, 429, etc).
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3040"
 const TOKEN_KEY = "satmaza_token"
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
