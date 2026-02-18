@@ -427,9 +427,24 @@ export function SatDetailDialog({
     }
   }
 
+  const validateAvtFields = useCallback(() => {
+    const errors: string[] = []
+    if (!formData.averigucao_tecnica?.trim()) errors.push("Averiguação Técnica")
+    if (!formData.possiveis_causas?.trim()) errors.push("Possíveis Causas")
+    if (!formData.solucao?.trim()) errors.push("Solução Proposta")
+
+    if (errors.length > 0) {
+      setUploadError(`Preencha os campos obrigatórios: ${errors.join(", ")}`)
+      return false
+    }
+    return true
+  }, [formData])
+
   const handleSave = useCallback(async () => {
     if (!sat) return
     setUploadError(null)
+
+    if (!validateAvtFields()) return
 
     try {
       const mediaId = await uploadLaudoIfNeeded()
@@ -441,7 +456,7 @@ export function SatDetailDialog({
     } catch {
       // uploadError já foi setado
     }
-  }, [formData, sat, onSave, onOpenChange])
+  }, [formData, sat, onSave, onOpenChange, validateAvtFields, uploadLaudoIfNeeded])
 
   const handleChangeStatus = useCallback(async () => {
     if (!sat) return
@@ -459,13 +474,16 @@ export function SatDetailDialog({
   }, [sat, formData, onChangeStatus, onOpenChange])
 
   const handleFinalizarClick = useCallback(() => {
+    // Verificar campos obrigatórios
+    if (!validateAvtFields()) return
+
     // Verificar se laudo está anexado
     if (!hasLaudo) {
       setUploadError("Anexe um laudo para finalizar a análise.")
       return
     }
     setConfirmOpen(true)
-  }, [hasLaudo])
+  }, [hasLaudo, validateAvtFields])
 
   const handleConfirmFinalizar = useCallback(async () => {
     setConfirmOpen(false)

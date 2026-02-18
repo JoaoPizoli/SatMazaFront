@@ -57,6 +57,11 @@ async function request<T>(
 
   // Token expirado ou inválido → limpar sessão e redirecionar
   if (res.status === 401) {
+    // Se for na tela de login (tentativa de login falha), não redirecionar nem dar msg de sessão
+    if (path === "/auth/login") {
+      throw new ApiError(401, "Usuário/e-mail e/ou senha digitado incorretamente.")
+    }
+
     clearStoredToken()
     sessionStorage.removeItem("satmaza_user")
     if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
@@ -79,7 +84,7 @@ async function request<T>(
   }
 
   const body = await res.text()
-  
+
   if (!res.ok) {
     let message = "Erro inesperado"
     try {
