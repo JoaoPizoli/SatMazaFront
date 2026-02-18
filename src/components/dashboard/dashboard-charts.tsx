@@ -133,7 +133,7 @@ export function SatsByRepresentativeChart({ data }: ChartProps) {
                                     }}
                                     itemStyle={{ color: "hsl(var(--foreground))" }}
                                 />
-                                <Bar dataKey="value" name="SATs" radius={[0, 4, 4, 0]}>
+                                <Bar dataKey="value" name="SATs" radius={[0, 4, 4, 0]} barSize={32}>
                                     {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={TABLE_COLORS[index % TABLE_COLORS.length]} />
                                     ))}
@@ -185,7 +185,7 @@ export function TopProductsChart({ data }: ChartProps) {
                                         borderRadius: "8px",
                                     }}
                                 />
-                                <Bar dataKey="value" name="SATs" fill="#10b981" radius={[4, 4, 0, 0]}>
+                                <Bar dataKey="value" name="SATs" fill="#10b981" radius={[4, 4, 0, 0]} barSize={48}>
                                     {chartData.map((entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
