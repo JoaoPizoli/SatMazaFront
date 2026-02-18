@@ -3,6 +3,7 @@ import type { User } from "@/types"
 
 interface LoginResponse {
   access_token: string
+  pending_setup?: boolean
 }
 
 /**
@@ -11,7 +12,7 @@ interface LoginResponse {
 export async function login(
   usuario: string,
   senha: string,
-): Promise<{ access_token: string }> {
+): Promise<{ access_token: string; pending_setup?: boolean }> {
   const isEmail = usuario.includes("@")
 
   const body = isEmail
@@ -43,6 +44,7 @@ export async function getMe(): Promise<User> {
   const data = await apiGet<{
     id: number
     usuario: string
+    nome: string | null
     email: string | null
     tipo: string
     createdAt: string
@@ -51,6 +53,7 @@ export async function getMe(): Promise<User> {
   return {
     id: data.id,
     usuario: data.usuario,
+    nome: data.nome,
     email: data.email,
     tipo: data.tipo as User["tipo"],
     createdAt: data.createdAt,

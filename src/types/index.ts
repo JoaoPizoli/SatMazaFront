@@ -27,6 +27,7 @@ export const UserRoleLabels: Record<UserRole, string> = {
 export type User = {
   id: number
   usuario: string
+  nome: string | null
   email: string | null
   tipo: UserRole
   createdAt: string
@@ -70,6 +71,7 @@ export const SATDestinoLabels: Record<SATDestino, string> = {
 export type RepresentanteResumido = {
   id: number
   usuario: string
+  nome?: string | null  // Added name
   email?: string | null
   tipo: string
 }
@@ -180,7 +182,7 @@ export type ErpCliente = {
   CODREP: string
   NOMREP: string
   CIDADE: string
-  UF: string // Added
+  UF: string
 }
 
 /** Dados do representante vindo da view VW_CLIENTES_ATIVOS do ERP */
@@ -215,7 +217,7 @@ export type DashboardFilter = {
   startDate?: string
   endDate?: string
   representanteId?: number
-  representanteCodigo?: string // Added
+  representanteCodigo?: string
   produto?: string
 }
 

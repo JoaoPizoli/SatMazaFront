@@ -17,7 +17,7 @@ type AuthContextType = {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (usuario: string, senha: string) => Promise<{ success: boolean; error?: string }>
+  login: (usuario: string, senha: string) => Promise<{ success: boolean; error?: string; pending_setup?: boolean }>
   logout: () => void
 }
 
@@ -86,10 +86,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (
       usuario: string,
       senha: string
-    ): Promise<{ success: boolean; error?: string }> => {
+    ): Promise<{ success: boolean; error?: string; pending_setup?: boolean }> => {
       try {
         // Chama POST /auth/login — armazena token internamente
-        await apiLogin(usuario, senha)
+        const res = await apiLogin(usuario, senha)
+
+        // Se tiver flag pending_setup, retornamos isso para o componente tratar o redirect
+        if (res.pending_setup) {
+          return { success: true, pending_setup: true }
+        }
 
         // Buscar dados completos do usuário
         const userData = await getMe()
