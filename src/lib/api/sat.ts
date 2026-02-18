@@ -91,6 +91,6 @@ export async function changeStatusSat(id: string, status: SATStatus): Promise<SA
 /**
  * Redirecionar SAT para o outro laboratório.
  */
-export async function redirecionarSat(id: string): Promise<SAT> {
-  return apiPatch<SAT>(`/sat/${id}/redirecionar`, {})
+export async function redirecionarSat(id: string, cc?: string[]): Promise<SAT> {
+  return apiPatch<SAT>(`/sat/${id}/redirecionar`, { cc })
 }

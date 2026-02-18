@@ -85,11 +85,9 @@ export default function RecebidasPage() {
     [refetch]
   )
 
-  const handleRedirect = useCallback(async (satId: string) => {
+  const handleRedirect = useCallback(async (satId: string, cc?: string[]) => {
     try {
-
-
-      await redirecionarSat(satId);
+      await redirecionarSat(satId, cc);
       alert("SAT redirecionada com sucesso!");
       refetch();
       setDialogOpen(false);
