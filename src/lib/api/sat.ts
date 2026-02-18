@@ -96,40 +96,53 @@ export async function redirecionarSat(id: string): Promise<SAT> {
 }
 
 /**
- * Buscar estatísticas de SATs por setor.
+ * Helper para construir a query string de filtros
  */
-export async function getSatsBySector(filter: DashboardFilter): Promise<DashboardChartData[]> {
+function buildFilterQuery(filter: DashboardFilter): string {
   const query = new URLSearchParams()
   if (filter.startDate) query.append('startDate', filter.startDate)
   if (filter.endDate) query.append('endDate', filter.endDate)
   if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
   if (filter.produto) query.append('produto', filter.produto)
+  return query.toString()
+}
 
-  return apiGet<DashboardChartData[]>(`/sat/dashboard/sector?${query.toString()}`)
+/**
+ * Buscar estatísticas de SATs por setor (laboratório de destino).
+ */
+export async function getSatsBySector(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/sector?${query}`)
 }
 
 /**
  * Buscar estatísticas de SATs por representante.
  */
-export async function getSatsByRepresentative(filter: DashboardFilter): Promise<DashboardChartData[]> {
-  const query = new URLSearchParams()
-  if (filter.startDate) query.append('startDate', filter.startDate)
-  if (filter.endDate) query.append('endDate', filter.endDate)
-  if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
-  if (filter.produto) query.append('produto', filter.produto)
-
-  return apiGet<DashboardChartData[]>(`/sat/dashboard/representative?${query.toString()}`)
+export async function getSatsByRepresentative(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/representative?${query}`)
 }
 
 /**
- * Buscar estatísticas de Top Produtos.
+ * Buscar top produtos com mais SATs.
  */
-export async function getTopProducts(filter: DashboardFilter): Promise<DashboardChartData[]> {
-  const query = new URLSearchParams()
-  if (filter.startDate) query.append('startDate', filter.startDate)
-  if (filter.endDate) query.append('endDate', filter.endDate)
-  if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
-  if (filter.produto) query.append('produto', filter.produto)
+export async function getTopProducts(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/products?${query}`)
+}
 
-  return apiGet<DashboardChartData[]>(`/sat/dashboard/products?${query.toString()}`)
+/**
+ * Buscar estatísticas de SATs por status.
+ */
+export async function getSatsStatusStats(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/status?${query}`)
 }

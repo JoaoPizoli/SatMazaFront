@@ -11,6 +11,7 @@ import {
     getSatsBySector,
     getSatsByRepresentative,
     getTopProducts,
+    getSatsStatusStats,
 } from "@/lib/api/sat"
 import { getRepresentantes } from "@/lib/api/usuario"
 import { DashboardChartData, DashboardFilter, User } from "@/types"
@@ -25,7 +26,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Loader2, Search, X, Inbox, TrendingUp, Users, Package } from "lucide-react"
+import { Loader2, Search, X, Inbox, TrendingUp, Users, Package, CheckCircle } from "lucide-react"
 
 function KpiCard({
     title,
@@ -65,6 +66,7 @@ export default function AdminDashboardPage() {
     const [sectorData, setSectorData] = useState<DashboardChartData[]>([])
     const [repData, setRepData] = useState<DashboardChartData[]>([])
     const [productData, setProductData] = useState<DashboardChartData[]>([])
+    const [statusData, setStatusData] = useState<DashboardChartData[]>([]) // Added statusData state
     const [representantes, setRepresentantes] = useState<User[]>([])
 
     // Filtros
@@ -86,15 +88,17 @@ export default function AdminDashboardPage() {
                 produto: produtoSearch || undefined,
             }
 
-            const [sectorRes, repRes, prodRes] = await Promise.all([
+            const [sectorRes, repRes, prodRes, statusRes] = await Promise.all([ // Added statusRes
                 getSatsBySector(filter),
                 getSatsByRepresentative(filter),
                 getTopProducts(filter),
+                getSatsStatusStats(filter), // Added getSatsByStatus call
             ])
 
             setSectorData(sectorRes)
             setRepData(repRes)
             setProductData(prodRes)
+            setStatusData(statusRes) // Set statusData
         } catch (error) {
             console.error("Erro ao buscar dados do dashboard:", error)
         } finally {
@@ -121,11 +125,19 @@ export default function AdminDashboardPage() {
         setProdutoSearch("")
     }
 
+    // KPIs Calculations
     const totalSats = sectorData.reduce((acc, curr) => acc + curr.value, 0)
-    // Assumindo que o primeiro setor com mais dados é o dominante para KPI rápido
-    const topSector = sectorData.length > 0 ? sectorData.reduce((prev, current) => (prev.value > current.value) ? prev : current).name : "N/A"
+
+    // Fix: Find the sector object with the highest value
+    const topSectorObj = sectorData.length > 0 ? sectorData.reduce((prev, current) => (prev.value > current.value) ? prev : current) : null
+    const topSectorName = topSectorObj ? topSectorObj.name : "N/A"
+    const topSectorValue = topSectorObj ? topSectorObj.value : 0
 
     const topRep = repData.length > 0 ? repData[0].name : "N/A"
+    const topRepValue = repData.length > 0 ? repData[0].value : 0
+
+    // Calculate Total Finalizadas from statusData
+    const totalFinalizadas = statusData.find(s => s.name === 'FINALIZADA')?.value || 0
 
     return (
         <PageTemplate
@@ -224,27 +236,27 @@ export default function AdminDashboardPage() {
                             />
                             <KpiCard
                                 title="Setor Principal"
-                                value={sectorData.length} // Apenas para placeholder visual, ideal seria o nome
-                                description={topSector}
+                                value={topSectorValue}
+                                description={topSectorName}
                                 icon={TrendingUp}
                                 colorClass="text-green-600"
                                 bgClass="bg-green-100 dark:bg-green-900/30"
                             />
                             <KpiCard
                                 title="Top Representante"
-                                value={repData.length > 0 ? repData[0].value : 0}
+                                value={topRepValue}
                                 description={topRep}
                                 icon={Users}
                                 colorClass="text-purple-600"
                                 bgClass="bg-purple-100 dark:bg-purple-900/30"
                             />
                             <KpiCard
-                                title="Produtos Únicos"
-                                value={productData.length}
-                                description="Tipos de produtos afetados"
-                                icon={Package}
-                                colorClass="text-amber-600"
-                                bgClass="bg-amber-100 dark:bg-amber-900/30"
+                                title="Total Finalizadas"
+                                value={totalFinalizadas}
+                                description="SATs concluídas"
+                                icon={CheckCircle}
+                                colorClass="text-emerald-600"
+                                bgClass="bg-emerald-100 dark:bg-emerald-900/30"
                             />
                         </div>
 
