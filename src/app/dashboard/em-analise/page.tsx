@@ -64,6 +64,7 @@ export default function EmAnalisePage() {
           recolhimento_lote: avtData.recolhimento_lote,
           solucao: avtData.solucao,
           data: avtData.data,
+          media_id: avtData.media_id,
         })
         refetch()
       } catch (err) {
@@ -87,6 +88,7 @@ export default function EmAnalisePage() {
           recolhimento_lote: avtData.recolhimento_lote,
           solucao: avtData.solucao,
           data: avtData.data,
+          media_id: avtData.media_id,
         })
         await changeStatusAvt(selectedSat.avt.id, AVTStatus.CONCLUIDO)
         await changeStatusSat(satId, SATStatus.FINALIZADA)

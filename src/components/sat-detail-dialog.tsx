@@ -240,23 +240,27 @@ function EvidenciasGallery({ evidencias }: { evidencias: SAT["evidencias"] }) {
 
 // ─── Badge de laudo clicável ─────────────────────────────────────────────────
 
-function LaudoBadge({ laudo }: { laudo?: MediaAttachment }) {
+// ─── Card de Laudo Rico (Estilo Galeria) ─────────────────────────────────────
+
+function LaudoCard({
+  laudo,
+  onRemove,
+  readOnly
+}: {
+  laudo: MediaAttachment;
+  onRemove?: () => void;
+  readOnly?: boolean;
+}) {
   const [isLoading, setIsLoading] = useState(false)
 
-  if (!laudo || laudo.status !== MediaStatus.READY) {
-    return (
-      <p className="text-sm text-muted-foreground">
-        Nenhum laudo anexado
-      </p>
-    )
-  }
-
   const fileName = laudo.originalName ?? laudo.blobName.split("/").pop() ?? "laudo"
+  const isImage = laudo.mimeType.startsWith("image/")
+  const fileExt = fileName.split(".").pop()?.toUpperCase() ?? "FILE"
 
   async function handleOpen() {
     try {
       setIsLoading(true)
-      const { viewUrl } = await getViewUrl(laudo!.id)
+      const { viewUrl } = await getViewUrl(laudo.id)
       window.open(viewUrl, "_blank", "noopener,noreferrer")
     } catch (err) {
       console.error("Erro ao abrir laudo:", err)
@@ -266,23 +270,56 @@ function LaudoBadge({ laudo }: { laudo?: MediaAttachment }) {
   }
 
   return (
-    <Button
-      variant="outline"
-      size="sm"
-      className="gap-2 text-xs"
+    <div
+      className="group relative flex items-center gap-3 rounded-lg border bg-muted/30 p-3 hover:bg-muted/60 transition-colors cursor-pointer w-full max-w-md"
       onClick={handleOpen}
-      disabled={isLoading}
+      title="Clique para visualizar o laudo"
     >
-      {isLoading ? (
-        <Loader2 className="h-3 w-3 animate-spin" />
-      ) : (
-        <Download className="h-3 w-3" />
-      )}
-      {fileName}
-      <Badge variant="secondary" className="text-[10px] ml-1">
-        {(laudo.sizeBytes / 1024 / 1024).toFixed(1)} MB
-      </Badge>
-    </Button>
+      {/* Ícone */}
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-background border shadow-sm">
+        {isImage ? (
+          <ImageIcon className="h-5 w-5 text-blue-500" />
+        ) : (
+          <FileText className="h-5 w-5 text-orange-500" />
+        )}
+      </div>
+
+      {/* Info */}
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate text-foreground">
+          {fileName}
+        </p>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Badge variant="secondary" className="text-[10px] h-4 px-1">
+            {fileExt}
+          </Badge>
+          <span>{(laudo.sizeBytes / 1024 / 1024).toFixed(2)} MB</span>
+        </div>
+      </div>
+
+      {/* Ações */}
+      <div className="flex items-center gap-1">
+        {isLoading && <Loader2 className="h-4 w-4 animate-spin text-primary" />}
+
+        {!readOnly && onRemove && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-muted-foreground hover:text-destructive z-10"
+            onClick={(e) => {
+              e.stopPropagation()
+              onRemove()
+            }}
+          >
+            <Trash2 className="h-4 w-4" />
+          </Button>
+        )}
+
+        <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground">
+          <Download className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
   )
 }
 
@@ -523,7 +560,7 @@ export function SatDetailDialog({
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <LaudoBadge laudo={sat.avt.laudo} />
+                    <LaudoCard laudo={sat.avt.laudo} readOnly />
                     <div className="flex flex-col">
                       <span className="text-xs font-medium">Status: {AVTStatusLabels[sat.avt.status]}</span>
                       <span className="text-[10px] text-muted-foreground">{new Date(sat.avt.data).toLocaleDateString("pt-BR")}</span>
@@ -720,17 +757,61 @@ export function SatDetailDialog({
                     <Label>
                       Laudo / Relatório <span className="text-destructive">*</span>
                     </Label>
+
+                    {/* Visualização de Laudo Já Existente no Backend */}
                     {readOnly ? (
-                      <LaudoBadge laudo={avt?.laudo} />
+                      avt?.laudo ? (
+                        <LaudoCard laudo={avt.laudo} readOnly />
+                      ) : (
+                        <p className="text-sm text-muted-foreground italic">
+                          Nenhum laudo anexado.
+                        </p>
+                      )
                     ) : (
-                      <>
+                      <div className="space-y-3">
+                        {/* Se já existe um laudo salvo ou selecionado */}
+                        {(avt?.laudo || formData.laudoFile) && (
+                          <div className="flex flex-col gap-2">
+                            {/* Laudo salvo no banco */}
+                            {avt?.laudo && !formData.laudoFile && (
+                              <LaudoCard
+                                laudo={avt.laudo}
+                                readOnly // No modo edição, não deixamos deletar direto daqui por enquanto, só substituir
+                              />
+                            )}
+
+                            {/* Arquivo local selecionado (preview simples) */}
+                            {formData.laudoFile && (
+                              <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+                                <FileText className="h-8 w-8 text-muted-foreground" />
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium truncate">{formData.laudoFile.name}</p>
+                                  <p className="text-xs text-muted-foreground">Novo arquivo selecionado</p>
+                                </div>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                  onClick={() => {
+                                    updateField("laudoFile", null)
+                                    setLaudoFileName("")
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Botão de Upload (Sempre visível para permitir substituição) */}
                         <div className="flex items-center gap-3">
                           <label
                             htmlFor="avt-laudo"
-                            className={`flex items-center gap-2 px-4 py-2 border rounded-md cursor-pointer hover:bg-muted/50 transition-colors text-sm ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                            className={`flex items-center gap-2 px-4 py-2 border border-dashed rounded-md cursor-pointer hover:bg-muted/50 transition-colors text-sm w-full justify-center ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                           >
                             <Upload className="h-4 w-4" />
-                            {laudoFileName || "Selecionar arquivo"}
+                            {formData.laudoFile ? "Substituir arquivo" : (avt?.laudo ? "Substituir laudo existente" : "Selecionar arquivo do laudo")}
                           </label>
                           <Input
                             id="avt-laudo"
@@ -740,35 +821,12 @@ export function SatDetailDialog({
                             onChange={handleFileChange}
                             disabled={isUploading}
                           />
-                          {laudoFileName && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => {
-                                updateField("laudoFile", null)
-                                setLaudoFileName("")
-                                // Se tinha um media_id anterior, mantém (não remove)
-                              }}
-                              disabled={isUploading}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
                         </div>
-                        {/* Indicador de laudo já existente */}
-                        {avt?.laudo && !formData.laudoFile && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <CheckCircle2 className="h-3 w-3 text-green-500" />
-                            <span className="text-xs text-muted-foreground">
-                              Laudo já anexado: {avt.laudo.originalName ?? "arquivo"}
-                            </span>
-                          </div>
-                        )}
+
                         <p className="text-xs text-muted-foreground">
                           Formatos aceitos: PDF, Word (.doc, .docx), Texto (.txt) ou Imagem. Máx. 50 MB.
                         </p>
-                      </>
+                      </div>
                     )}
                   </div>
 
