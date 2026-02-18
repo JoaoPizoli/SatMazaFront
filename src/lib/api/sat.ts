@@ -44,8 +44,7 @@ export async function createSat(data: {
   cidade: string
   produtos: string
   quantidade: number
-  lotes: string[]
-  validade: string
+  lotes: { lote: string; validade: string }[]
   contato: string
   representante_id: number
   telefone: string
@@ -64,8 +63,7 @@ export async function updateSat(
     cidade: string
     produtos: string
     quantidade: number
-    lotes: string[]
-    validade: string
+    lotes: { lote: string; validade: string }[]
     contato: string
     representante_id: number
     telefone: string
@@ -88,4 +86,11 @@ export async function deleteSat(id: string): Promise<void> {
  */
 export async function changeStatusSat(id: string, status: SATStatus): Promise<SAT> {
   return apiPatch<SAT>(`/sat/${id}/status`, { status })
+}
+
+/**
+ * Redirecionar SAT para o outro laboratório.
+ */
+export async function redirecionarSat(id: string): Promise<SAT> {
+  return apiPatch<SAT>(`/sat/${id}/redirecionar`, {})
 }

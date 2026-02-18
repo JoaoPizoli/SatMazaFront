@@ -43,8 +43,10 @@ export default function NovaSatPage() {
   const [cidade, setCidade] = useState("")
   const [produtos, setProdutos] = useState("")
   const [quantidade, setQuantidade] = useState<number>(1)
-  const [lotes, setLotes] = useState<string[]>([""])
-  const [validade, setValidade] = useState("")
+
+  // Refatorado para array de objetos { lote: string, validade: string }
+  const [lotes, setLotes] = useState<{ lote: string; validade: string }[]>([{ lote: "", validade: "" }])
+
   const [contato, setContato] = useState("")
   const [telefone, setTelefone] = useState("")
   const [reclamacao, setReclamacao] = useState("")
@@ -97,21 +99,25 @@ export default function NovaSatPage() {
   }
 
   function handleAddLote() {
-    setLotes([...lotes, ""])
+    setLotes([...lotes, { lote: "", validade: "" }])
   }
 
   function handleRemoveLote(index: number) {
     setLotes(lotes.filter((_, i) => i !== index))
   }
 
-  function handleLoteChange(index: number, value: string) {
-    const digits = value.replace(/\D/g, "").slice(0, 9)
-    let formatted = digits
-    if (digits.length > 6) {
-      formatted = `${digits.slice(0, 6)}-${digits.slice(6)}`
-    }
+  function handleLoteChange(index: number, field: 'lote' | 'validade', value: string) {
     const updated = [...lotes]
-    updated[index] = formatted
+    if (field === 'lote') {
+      const digits = value.replace(/\D/g, "").slice(0, 9)
+      let formatted = digits
+      if (digits.length > 6) {
+        formatted = `${digits.slice(0, 6)}-${digits.slice(6)}`
+      }
+      updated[index].lote = formatted
+    } else {
+      updated[index].validade = value
+    }
     setLotes(updated)
   }
 
@@ -174,15 +180,22 @@ export default function NovaSatPage() {
       return
     }
 
-    const validLotes = lotes.filter((l) => l.trim() !== "")
+    const validLotes = lotes.filter((l) => l.lote.trim() !== "")
     if (validLotes.length === 0) {
       setError("Informe pelo menos um lote")
       return
     }
 
-    const invalidLotes = validLotes.filter((l) => !validateLoteFormat(l))
+    const invalidLotes = validLotes.filter((l) => !validateLoteFormat(l.lote))
     if (invalidLotes.length > 0) {
-      setError(`Lotes com formato inválido (use 000000-000): ${invalidLotes.join(", ")}`)
+      setError(`Lotes com formato inválido (use 000000-000): ${invalidLotes.map(l => l.lote).join(", ")}`)
+      return
+    }
+
+    // Validar se todos têm validade
+    const missingValidade = validLotes.filter(l => !l.validade);
+    if (missingValidade.length > 0) {
+      setError(`Informe a data de validade para todos os lotes.`)
       return
     }
 
@@ -202,8 +215,8 @@ export default function NovaSatPage() {
         cidade: cidade || "A definir",
         produtos,
         quantidade,
-        lotes: validLotes,
-        validade,
+        lotes: validLotes, // Agora passa os objetos {lote, validade}
+        // validade removida
         contato,
         representante_id: user.id,
         telefone,
@@ -346,33 +359,31 @@ export default function NovaSatPage() {
               />
             </div>
 
-            {/* Validade */}
-            <div className="space-y-2 max-w-xs">
-              <Label htmlFor="validade">Validade</Label>
-              <Input
-                id="validade"
-                type="date"
-                max="9999-12-31"
-                value={validade}
-                onChange={(e) => setValidade(e.target.value)}
-                required
-                disabled={isSubmitting}
-              />
-            </div>
-
-            {/* Lotes dinâmicos */}
+            {/* Lotes e Validades dinâmicos */}
             <div className="space-y-2">
-              <Label>Lotes (formato: 000000-000)</Label>
-              <div className="space-y-2">
-                {lotes.map((lote, index) => (
-                  <div key={index} className="flex gap-2">
-                    <Input
-                      value={lote}
-                      onChange={(e) => handleLoteChange(index, e.target.value)}
-                      placeholder="000000-000"
-                      maxLength={10}
-                      disabled={isSubmitting}
-                    />
+              <Label>Lotes e Validades (Lote: 000000-000)</Label>
+              <div className="space-y-3">
+                {lotes.map((item, index) => (
+                  <div key={index} className="flex gap-2 items-start">
+                    <div className="flex-1">
+                      <Input
+                        value={item.lote}
+                        onChange={(e) => handleLoteChange(index, 'lote', e.target.value)}
+                        placeholder="Lote (000000-000)"
+                        maxLength={10}
+                        disabled={isSubmitting}
+                      />
+                    </div>
+                    <div className="w-40">
+                      <Input
+                        type="date"
+                        max="9999-12-31"
+                        value={item.validade}
+                        onChange={(e) => handleLoteChange(index, 'validade', e.target.value)}
+                        disabled={isSubmitting}
+                        required
+                      />
+                    </div>
                     {lotes.length > 1 && (
                       <Button
                         type="button"
@@ -380,6 +391,7 @@ export default function NovaSatPage() {
                         size="icon"
                         onClick={() => handleRemoveLote(index)}
                         disabled={isSubmitting}
+                        className="mt-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -387,27 +399,31 @@ export default function NovaSatPage() {
                   </div>
                 ))}
               </div>
-              {lotes.filter((l) => l.trim() !== "").length > 0 && (
-                <div className="flex flex-wrap gap-2">
+
+              {/* Badges de validação visual */}
+              {lotes.filter((l) => l.lote.trim() !== "").length > 0 && (
+                <div className="flex flex-wrap gap-2 mt-2">
                   {lotes
-                    .filter((l) => l.trim() !== "")
-                    .map((lote, i) => (
+                    .filter((l) => l.lote.trim() !== "")
+                    .map((item, i) => (
                       <Badge
                         key={i}
-                        variant={validateLoteFormat(lote) ? "secondary" : "destructive"}
+                        variant={validateLoteFormat(item.lote) ? "secondary" : "destructive"}
                         className="text-sm px-3 py-1"
                       >
-                        {lote}
+                        {item.lote} {item.validade ? `(${new Date(item.validade).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}
                       </Badge>
                     ))}
                 </div>
               )}
+
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleAddLote}
                 disabled={isSubmitting}
+                className="mt-2"
               >
                 <Plus className="mr-1 h-4 w-4" />
                 Adicionar Lote

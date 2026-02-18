@@ -80,6 +80,7 @@ interface SatDetailDialogProps {
   onOpenChange: (open: boolean) => void
   onSave?: (avtData: AVTFormData) => void
   onChangeStatus?: (satId: string, avtData: AVTFormData) => void
+  onRedirect?: (satId: string) => void
 }
 
 export interface AVTFormData {
@@ -117,7 +118,7 @@ function getInitialFormData(avt?: AVT | null, sat?: SAT | null): AVTFormData {
   return {
     averigucao_tecnica: "",
     possiveis_causas: "",
-    lote: sat?.lotes[0] ?? "",
+    lote: sat?.lotes[0]?.lote ?? "",
     reclamacao_procedente: false,
     troca: false,
     recolhimento_lote: false,
@@ -333,6 +334,7 @@ export function SatDetailDialog({
   onOpenChange,
   onSave,
   onChangeStatus,
+  onRedirect,
 }: SatDetailDialogProps) {
   const [formData, setFormData] = useState<AVTFormData>(() =>
     getInitialFormData(avt, sat)
@@ -521,12 +523,7 @@ export function SatDetailDialog({
                 <InfoRow
                   icon={FileText}
                   label="Lote(s)"
-                  value={sat.lotes.join(", ")}
-                />
-                <InfoRow
-                  icon={Calendar}
-                  label="Validade"
-                  value={new Date(sat.validade).toLocaleDateString("pt-BR")}
+                  value={sat.lotes.map(l => `${l.lote} (${new Date(l.validade).toLocaleDateString("pt-BR", { timeZone: 'UTC' })})`).join(", ")}
                 />
                 <InfoRow icon={User} label="Contato" value={sat.contato} />
                 <InfoRow icon={Phone} label="Telefone" value={sat.telefone} />
@@ -597,13 +594,13 @@ export function SatDetailDialog({
                   <div className="space-y-2">
                     <Label>Lote(s) Analisado(s)</Label>
                     <div className="flex flex-wrap gap-2">
-                      {lotesOptions.map((lote) => (
+                      {lotesOptions.map((item) => (
                         <Badge
-                          key={lote}
+                          key={item.id}
                           variant="secondary"
                           className="text-sm px-3 py-1"
                         >
-                          {lote}
+                          {item.lote}
                         </Badge>
                       ))}
                     </div>
@@ -851,6 +848,15 @@ export function SatDetailDialog({
               >
                 Cancelar
               </Button>
+              {onRedirect && (
+                <Button variant="secondary" onClick={() => {
+                  onRedirect(sat.id)
+                  onOpenChange(false)
+                }}>
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Redirecionar
+                </Button>
+              )}
               <Button onClick={handleChangeStatus}>
                 <CheckCircle2 className="mr-2 h-4 w-4" />
                 Iniciar Análise

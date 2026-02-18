@@ -9,7 +9,7 @@ import {
 } from "@/components/sat-detail-dialog"
 import { useSats } from "@/hooks/use-sats"
 import { createAvt } from "@/lib/api/avt"
-import { changeStatusSat } from "@/lib/api/sat"
+import { changeStatusSat, redirecionarSat } from "@/lib/api/sat"
 import { useAuth } from "@/contexts/auth-context"
 import {
   type SAT,
@@ -85,6 +85,20 @@ export default function RecebidasPage() {
     [refetch]
   )
 
+  const handleRedirect = useCallback(async (satId: string) => {
+    try {
+      if (!confirm("Tem certeza que deseja redirecionar esta SAT para o outro laboratório?")) return;
+
+      await redirecionarSat(satId);
+      alert("SAT redirecionada com sucesso!");
+      refetch();
+      setDialogOpen(false);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Erro ao redirecionar SAT"
+      alert(message)
+    }
+  }, [refetch]);
+
   if (isLoading) {
     return (
       <PageTemplate title="SATs Recebidas" description="Carregando...">
@@ -113,6 +127,7 @@ export default function RecebidasPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onChangeStatus={handleIniciarAnalise}
+        onRedirect={handleRedirect}
       />
     </PageTemplate>
   )

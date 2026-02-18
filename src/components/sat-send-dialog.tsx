@@ -246,12 +246,7 @@ export function SatSendDialog({
                 <InfoRow
                   icon={FileText}
                   label="Lote(s)"
-                  value={sat.lotes.join(", ")}
-                />
-                <InfoRow
-                  icon={Calendar}
-                  label="Validade"
-                  value={new Date(sat.validade).toLocaleDateString("pt-BR")}
+                  value={sat.lotes.map(l => `${l.lote} (${new Date(l.validade).toLocaleDateString("pt-BR", { timeZone: 'UTC' })})`).join(", ")}
                 />
                 <InfoRow icon={User} label="Contato" value={sat.contato} />
                 <InfoRow icon={Phone} label="Telefone" value={sat.telefone} />

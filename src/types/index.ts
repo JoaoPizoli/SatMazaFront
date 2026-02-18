@@ -74,6 +74,13 @@ export type RepresentanteResumido = {
   tipo: string
 }
 
+export type SatLote = {
+  id: string
+  lote: string
+  validade: string
+  sat_id: string
+}
+
 /** Alinhado com SatEntity do backend (com relations carregadas) */
 export type SAT = {
   id: string
@@ -83,8 +90,7 @@ export type SAT = {
   cidade: string
   produtos: string
   quantidade: number
-  lotes: string[]
-  validade: string
+  lotes: SatLote[] // Agora é uma relação
   contato: string
   representante_id: string
   representante?: RepresentanteResumido
