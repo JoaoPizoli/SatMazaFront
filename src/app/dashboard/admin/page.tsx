@@ -14,7 +14,7 @@ import {
     getSatsStatusStats,
 } from "@/lib/api/sat"
 import { getRepresentantes } from "@/lib/api/usuario"
-import { DashboardChartData, DashboardFilter, User } from "@/types"
+import { DashboardChartData, DashboardFilter, User, ErpProduto } from "@/types"
 import { Input } from "@/components/ui/input"
 import {
     Select,
@@ -27,6 +27,8 @@ import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Loader2, Search, X, Inbox, TrendingUp, Users, Package, CheckCircle } from "lucide-react"
+import { RepresentativeSearchSelect } from "@/components/representative-search-select"
+import { ProductSearchSelect } from "@/components/product-search-select"
 
 function KpiCard({
     title,
@@ -72,8 +74,10 @@ export default function AdminDashboardPage() {
     // Filtros
     const [startDate, setStartDate] = useState("")
     const [endDate, setEndDate] = useState("")
-    const [selectedRepId, setSelectedRepId] = useState<string>("all")
-    const [produtoSearch, setProdutoSearch] = useState("")
+
+    // Novos estados para filtros de busca
+    const [selectedRep, setSelectedRep] = useState<{ CODREP: string; NOMREP: string } | null>(null)
+    const [selectedProduct, setSelectedProduct] = useState<ErpProduto | null>(null)
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -81,11 +85,8 @@ export default function AdminDashboardPage() {
             const filter: DashboardFilter = {
                 startDate: startDate || undefined,
                 endDate: endDate || undefined,
-                representanteId:
-                    selectedRepId && selectedRepId !== "all"
-                        ? Number(selectedRepId)
-                        : undefined,
-                produto: produtoSearch || undefined,
+                representanteCodigo: selectedRep?.CODREP, // Usa o código do representante selecionado
+                produto: selectedProduct?.DESCRICAO_ITEM, // Usa a descrição do produto selecionado
             }
 
             const [sectorRes, repRes, prodRes, statusRes] = await Promise.all([ // Added statusRes
@@ -104,13 +105,12 @@ export default function AdminDashboardPage() {
         } finally {
             setLoading(false)
         }
-    }, [startDate, endDate, selectedRepId, produtoSearch])
+    }, [startDate, endDate, selectedRep, selectedProduct])
 
-    // Carregar lista de representantes apenas uma vez
+    // Carregar lista de representantes apenas uma vez (mantido para compatibilidade se necessário, mas não usado no novo select)
     useEffect(() => {
-        getRepresentantes()
-            .then(setRepresentantes)
-            .catch((err) => console.error("Erro ao carregar representantes", err))
+        // getRepresentantes().then(setRepresentantes).catch(...) 
+        // Não é mais necessário carregar todos de uma vez
     }, [])
 
     // Carregar dados do dashboard quando filtros mudarem
@@ -121,8 +121,8 @@ export default function AdminDashboardPage() {
     const clearFilters = () => {
         setStartDate("")
         setEndDate("")
-        setSelectedRepId("all")
-        setProdutoSearch("")
+        setSelectedRep(null)
+        setSelectedProduct(null)
     }
 
     // KPIs Calculations
@@ -144,76 +144,51 @@ export default function AdminDashboardPage() {
             title="Dashboard Gerencial"
             description="Visão geral e indicadores de performance"
         >
-            <div className="space-y-8">
+            <div className="flex flex-col space-y-6">
                 {/* Filtros */}
-                <Card className="border-t-4 border-t-primary shadow-sm">
+                <Card className="border-t-4 border-t-primary">
                     <CardHeader className="pb-3">
-                        <CardTitle className="text-base font-semibold flex items-center gap-2">
-                            <Search className="h-4 w-4 bg-primary/10 text-primary p-0.5 rounded" />
-                            Filtros Avançados
+                        <CardTitle className="text-lg flex items-center gap-2">
+                            <Search className="h-5 w-5" />
+                            Filtros
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-5 items-end">
+                        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-end">
                             <div className="space-y-2">
-                                <Label htmlFor="startDate">Data Inicial</Label>
+                                <Label>Data Inicial</Label>
                                 <Input
-                                    id="startDate"
                                     type="date"
                                     value={startDate}
                                     onChange={(e) => setStartDate(e.target.value)}
-                                    className="bg-background"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="endDate">Data Final</Label>
+                                <Label>Data Final</Label>
                                 <Input
-                                    id="endDate"
                                     type="date"
                                     value={endDate}
                                     onChange={(e) => setEndDate(e.target.value)}
-                                    className="bg-background"
                                 />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="representative">Representante</Label>
-                                <Select
-                                    value={selectedRepId}
-                                    onValueChange={setSelectedRepId}
-                                >
-                                    <SelectTrigger id="representative" className="bg-background">
-                                        <SelectValue placeholder="Todos" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="all">Todos</SelectItem>
-                                        {representantes.map((rep) => (
-                                            <SelectItem key={rep.id} value={String(rep.id)}>
-                                                {rep.usuario}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="produto">Produto</Label>
-                                <Input
-                                    id="produto"
-                                    placeholder="Buscar produto..."
-                                    value={produtoSearch}
-                                    onChange={(e) => setProdutoSearch(e.target.value)}
-                                    className="bg-background"
+                                <Label>Representante</Label>
+                                <RepresentativeSearchSelect
+                                    onSelect={setSelectedRep}
+                                    onClear={() => setSelectedRep(null)}
                                 />
                             </div>
-                            <div>
-                                <Button
-                                    variant="secondary"
-                                    className="w-full hover:bg-destructive/10 hover:text-destructive transition-colors"
-                                    onClick={clearFilters}
-                                >
-                                    <X className="mr-2 h-4 w-4" />
-                                    Limpar
-                                </Button>
+                            <div className="space-y-2">
+                                <Label>Produto</Label>
+                                <ProductSearchSelect
+                                    onSelect={setSelectedProduct}
+                                    onClear={() => setSelectedProduct(null)}
+                                />
                             </div>
+                            <Button variant="outline" onClick={clearFilters} className="w-full">
+                                <X className="mr-2 h-4 w-4" />
+                                Limpar
+                            </Button>
                         </div>
                     </CardContent>
                 </Card>

@@ -214,6 +214,7 @@ export type DashboardFilter = {
   startDate?: string
   endDate?: string
   representanteId?: number
+  representanteCodigo?: string // Added
   produto?: string
 }
 

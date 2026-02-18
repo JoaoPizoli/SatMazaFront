@@ -103,6 +103,7 @@ function buildFilterQuery(filter: DashboardFilter): string {
   if (filter.startDate) query.append('startDate', filter.startDate)
   if (filter.endDate) query.append('endDate', filter.endDate)
   if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
+  if (filter.representanteCodigo) query.append('representanteCodigo', filter.representanteCodigo) // Added
   if (filter.produto) query.append('produto', filter.produto)
   return query.toString()
 }
