@@ -30,10 +30,18 @@ export function LoginForm() {
     setError("")
     setIsSubmitting(true)
     const result = await login(data.usuario, data.senha)
-    if (!result.success) {
+
+    if (result.success) {
+      if (result.pending_setup) {
+        window.location.href = "/complete-registration"
+        return
+      }
+      // Login success, redirect handled by AuthContext or component if needed
+      // But AuthContext executes redirect in useEffect usually.
+    } else {
       setError(result.error ?? "Erro ao fazer login")
+      setIsSubmitting(false)
     }
-    setIsSubmitting(false)
   }
 
   return (

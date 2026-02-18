@@ -73,9 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (isLoading) return
 
     const isLoginPage = pathname === "/login"
+    const isCompleteRegistrationPage = pathname === "/complete-registration"
     const isAuthenticated = !!user
 
-    if (!isAuthenticated && !isLoginPage) {
+    if (!isAuthenticated && !isLoginPage && !isCompleteRegistrationPage) {
       router.replace("/login")
     } else if (isAuthenticated && isLoginPage) {
       router.replace("/dashboard")
