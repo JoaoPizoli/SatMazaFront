@@ -180,6 +180,7 @@ export type ErpCliente = {
   CODREP: string
   NOMREP: string
   CIDADE: string
+  UF: string // Added
 }
 
 /** Dados do representante vindo da view VW_CLIENTES_ATIVOS do ERP */

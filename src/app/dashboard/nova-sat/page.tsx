@@ -91,7 +91,8 @@ export default function NovaSatPage() {
 
   function handleClienteSelect(c: ErpCliente) {
     setCliente(c.NOMCLI)
-    setCidade(c.CIDADE || "")
+    const cidadeFormatada = c.UF ? `${c.CIDADE} - ${c.UF}` : c.CIDADE;
+    setCidade(cidadeFormatada || "")
   }
 
   function handleProdutoSelect(p: ErpProduto) {
