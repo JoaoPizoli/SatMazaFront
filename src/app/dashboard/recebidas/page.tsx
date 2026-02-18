@@ -87,7 +87,7 @@ export default function RecebidasPage() {
 
   const handleRedirect = useCallback(async (satId: string) => {
     try {
-      if (!confirm("Tem certeza que deseja redirecionar esta SAT para o outro laboratório?")) return;
+
 
       await redirecionarSat(satId);
       alert("SAT redirecionada com sucesso!");

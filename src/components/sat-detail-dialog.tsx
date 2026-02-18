@@ -345,6 +345,7 @@ export function SatDetailDialog({
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
+  const [redirectConfirmOpen, setRedirectConfirmOpen] = useState(false)
 
   // Reset form when dialog opens with different SAT/AVT
   const resetForm = useCallback(() => {
@@ -849,10 +850,7 @@ export function SatDetailDialog({
                 Cancelar
               </Button>
               {onRedirect && (
-                <Button variant="secondary" onClick={() => {
-                  onRedirect(sat.id)
-                  onOpenChange(false)
-                }}>
+                <Button variant="secondary" onClick={() => setRedirectConfirmOpen(true)}>
                   <RefreshCw className="mr-2 h-4 w-4" />
                   Redirecionar
                 </Button>
@@ -917,6 +915,31 @@ export function SatDetailDialog({
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleConfirmFinalizar}>
               Confirmar Finalização
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* ── Alert de confirmação para Redirecionamento ────────────── */}
+      <AlertDialog open={redirectConfirmOpen} onOpenChange={setRedirectConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Redirecionar SAT</AlertDialogTitle>
+            <AlertDialogDescription>
+              Tem certeza que deseja redirecionar a SAT{" "}
+              <strong>{sat.codigo}</strong> para o outro laboratório?
+              <br />
+              O status será alterado para <strong>Enviado</strong>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={() => {
+              setRedirectConfirmOpen(false)
+              if (onRedirect) onRedirect(sat.id)
+              onOpenChange(false)
+            }}>
+              Confirmar Redirecionamento
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
