@@ -77,7 +77,7 @@ export function SatListTable({
                 {sat.cliente}
               </TableCell>
               <TableCell className="hidden lg:table-cell text-muted-foreground text-xs">
-                {sat.lotes.join(", ")}
+                {sat.lotes.map(l => l.lote).join(", ")}
               </TableCell>
               <TableCell>
                 <Badge
@@ -94,6 +94,6 @@ export function SatListTable({
           ))}
         </TableBody>
       </Table>
-    </div>
+    </div >
   )
 }

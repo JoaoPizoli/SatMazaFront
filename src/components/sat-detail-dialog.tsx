@@ -80,7 +80,7 @@ interface SatDetailDialogProps {
   onOpenChange: (open: boolean) => void
   onSave?: (avtData: AVTFormData) => void
   onChangeStatus?: (satId: string, avtData: AVTFormData) => void
-  onRedirect?: (satId: string, cc?: string[]) => void
+  onRedirect?: (satId: string) => void
 }
 
 export interface AVTFormData {
@@ -346,14 +346,12 @@ export function SatDetailDialog({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [redirectConfirmOpen, setRedirectConfirmOpen] = useState(false)
-  const [ccInput, setCcInput] = useState("")
 
   // Reset form when dialog opens with different SAT/AVT
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData(avt, sat))
     setLaudoFileName(avt?.laudo?.originalName ?? "")
     setUploadError(null)
-    setCcInput("")
   }, [avt, sat])
 
   // Sync form data when avt/sat props change (component stays mounted)
@@ -934,24 +932,11 @@ export function SatDetailDialog({
               O status será alterado para <strong>Enviado</strong>.
             </AlertDialogDescription>
           </AlertDialogHeader>
-
-          <div className="py-2 space-y-2">
-            <Label htmlFor="cc-emails">Cópia para (opcional)</Label>
-            <Input
-              id="cc-emails"
-              placeholder="email@exemplo.com, outro@exemplo.com"
-              value={ccInput}
-              onChange={(e) => setCcInput(e.target.value)}
-            />
-            <p className="text-[10px] text-muted-foreground">Separe múltiplos emails por vírgula.</p>
-          </div>
-
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={() => {
-              const ccList = ccInput.split(',').map(e => e.trim()).filter(e => e.length > 0)
               setRedirectConfirmOpen(false)
-              if (onRedirect) onRedirect(sat.id, ccList)
+              if (onRedirect) onRedirect(sat.id)
               onOpenChange(false)
             }}>
               Confirmar Redirecionamento
