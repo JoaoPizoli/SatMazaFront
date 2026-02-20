@@ -36,8 +36,6 @@ export function LoginForm() {
         window.location.href = "/complete-registration"
         return
       }
-      // Login success, redirect handled by AuthContext or component if needed
-      // But AuthContext executes redirect in useEffect usually.
     } else {
       setError(result.error ?? "Erro ao fazer login")
       setIsSubmitting(false)
@@ -46,41 +44,46 @@ export function LoginForm() {
 
   return (
     <div className="flex min-h-svh w-full flex-col lg:flex-row">
-      {/* ==================== PAINEL HERO (Esquerdo) ==================== */}
-      <div className="relative flex w-full flex-col items-center justify-center bg-gradient-to-br from-primary via-primary/95 to-primary/80 px-8 py-12 text-center lg:w-1/2 lg:py-0">
+      {/* ==================== BRAND HEADER — Mobile ==================== */}
+      <div className="flex items-center justify-center gap-3 bg-primary px-6 py-5 lg:hidden">
+        <div className="relative h-9 w-9">
+          <Image src="/logo.svg" alt="SatMaza" fill className="object-contain" priority />
+        </div>
+        <span className="text-lg font-semibold tracking-tight text-white">SatMaza</span>
+      </div>
 
-        {/* Conteúdo Minimalista: Apenas Logo e Texto */}
-        <div className="flex flex-col items-center gap-8 lg:gap-10">
-          {/* Logo com destaque */}
-          <div className="relative h-32 w-32 drop-shadow-2xl filter lg:h-40 lg:w-40">
-            <Image
-              src="/logo.svg"
-              alt="SatMaza"
-              fill
-              className="object-contain"
-              priority
-            />
+      {/* ==================== PAINEL HERO — Desktop ==================== */}
+      <div className="relative hidden w-full items-center justify-center overflow-hidden bg-primary lg:flex lg:w-1/2">
+        {/* Decoração sutil */}
+        <div className="absolute -right-24 -top-24 h-80 w-80 rounded-full bg-white/[0.03]" />
+        <div className="absolute -bottom-32 -left-20 h-96 w-96 rounded-full bg-white/[0.03]" />
+
+        {/* Conteúdo central */}
+        <div className="relative z-10 flex flex-col items-center gap-6">
+          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-white/10 ring-1 ring-white/10">
+            <div className="relative h-12 w-12">
+              <Image src="/logo.svg" alt="SatMaza" fill className="object-contain" priority />
+            </div>
           </div>
 
-          {/* Título e subtítulo */}
-          <div className="space-y-4">
-            <h1 className="text-5xl font-extrabold tracking-tight text-white drop-shadow-md lg:text-6xl">
+          <div className="space-y-1.5 text-center">
+            <h1 className="text-2xl font-semibold tracking-tight text-white">
               SatMaza
             </h1>
-            <p className="text-lg font-medium text-white/90 lg:text-xl">
+            <p className="text-sm text-white/50">
               Sistema de Assistência Técnica
             </p>
           </div>
         </div>
 
-        {/* Badge de segurança discreto no rodapé do painel */}
-        <div className="absolute bottom-8 flex items-center gap-2 text-xs font-medium text-white/60">
-          <ShieldCheck className="h-4 w-4" />
+        {/* Rodapé discreto */}
+        <div className="absolute bottom-5 flex items-center gap-1.5 text-[11px] text-white/30">
+          <ShieldCheck className="h-3 w-3" />
           <span>Ambiente Seguro</span>
         </div>
       </div>
 
-      {/* ==================== PAINEL FORMULÁRIO (Direito) ==================== */}
+      {/* ==================== PAINEL FORMULÁRIO ==================== */}
       <div className="flex w-full flex-1 flex-col items-center justify-center bg-background px-6 py-12 lg:w-1/2 lg:px-12">
         <div className="w-full max-w-md space-y-8">
           {/* Cabeçalho do formulário */}
