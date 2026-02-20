@@ -16,7 +16,6 @@ import { apiPost } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z.object({
-    nome: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
     email: z.string().email("E-mail inválido"),
     senha: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
     confirmSenha: z.string(),
@@ -40,7 +39,6 @@ export default function CompleteRegistrationPage() {
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
         defaultValues: {
-            nome: "",
             email: "",
             senha: "",
             confirmSenha: "",
@@ -51,7 +49,6 @@ export default function CompleteRegistrationPage() {
         setIsLoading(true)
         try {
             await apiPost("/usuario/complete-registration", {
-                nome: values.nome,
                 email: values.email,
                 senha: values.senha,
             })
@@ -85,18 +82,6 @@ export default function CompleteRegistrationPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="nome" className="font-bold">
-                                Nome Completo <span className="text-destructive">*</span>
-                            </Label>
-                            <Input
-                                id="nome"
-                                placeholder="Seu nome"
-                                {...register("nome")}
-                            />
-                            {errors.nome && <p className="text-xs text-destructive">{errors.nome.message}</p>}
-                        </div>
-
                         <div className="space-y-2">
                             <Label htmlFor="email" className="font-bold">
                                 E-mail <span className="text-destructive">*</span>
