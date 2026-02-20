@@ -1,11 +1,22 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api"
 import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData } from "@/types"
 
+interface PaginatedResponse<T> {
+  data: T[]
+  meta: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+
 /**
  * Buscar todas as SATs.
  */
 export async function getAllSats(): Promise<SAT[]> {
-  return apiGet<SAT[]>("/sat")
+  const res = await apiGet<PaginatedResponse<SAT>>("/sat")
+  return res.data
 }
 
 /**
@@ -19,21 +30,24 @@ export async function getSatById(id: string): Promise<SAT> {
  * Buscar SATs por status.
  */
 export async function getSatsByStatus(status: SATStatus): Promise<SAT[]> {
-  return apiGet<SAT[]>(`/sat/status/${status}`)
+  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/status/${status}`)
+  return res.data
 }
 
 /**
  * Buscar SATs por laboratório de destino.
  */
 export async function getSatsByLab(laboratorio: SATDestino): Promise<SAT[]> {
-  return apiGet<SAT[]>(`/sat/laboratorio/${laboratorio}`)
+  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/laboratorio/${laboratorio}`)
+  return res.data
 }
 
 /**
  * Buscar SATs de um representante específico.
  */
 export async function getSatsByRepresentante(representanteId: number): Promise<SAT[]> {
-  return apiGet<SAT[]>(`/sat/representante/${representanteId}`)
+  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/representante/${representanteId}`)
+  return res.data
 }
 
 /**
