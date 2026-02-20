@@ -339,9 +339,6 @@ export function SatSendDialog({
               ?
               <br />
               <br />
-              <span className="text-destructive font-semibold">
-                Essa ação não pode ser revertida!
-              </span>
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
