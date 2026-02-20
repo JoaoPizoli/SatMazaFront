@@ -59,7 +59,7 @@ export function LoginForm() {
       <div className="w-full max-w-[420px]">
         {/* ==================== BRANDING ==================== */}
         <div className="mb-8 flex flex-col items-center gap-4">
-          <div className="relative h-24 w-48">
+          <div className="relative h-36 w-72">
             <Image
               src="/logo-maza.svg"
               alt="SatMaza"
