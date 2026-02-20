@@ -6,7 +6,7 @@ const nextConfig: NextConfig = {
   typedRoutes: true,
   // Permite acesso de outros PCs na rede local durante desenvolvimento
   // Edite conforme o IP da sua máquina de desenvolvimento
-  allowedDevOrigins: ['localhost'],
+  allowedDevOrigins: ['localhost', '192.168.20.17'],
 };
 
 export default nextConfig;
