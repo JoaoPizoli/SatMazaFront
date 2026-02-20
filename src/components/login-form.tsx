@@ -58,24 +58,19 @@ export function LoginForm() {
 
       <div className="w-full max-w-[420px]">
         {/* ==================== BRANDING ==================== */}
-        <div className="mb-8 flex flex-col items-center gap-3">
-          <div className="relative h-12 w-12">
+        <div className="mb-8 flex flex-col items-center gap-4">
+          <div className="relative h-24 w-48">
             <Image
-              src="/logo.svg"
+              src="/logo-maza.svg"
               alt="SatMaza"
               fill
               className="object-contain"
               priority
             />
           </div>
-          <div className="text-center">
-            <h1 className="text-lg font-semibold tracking-tight text-foreground">
-              SatMaza
-            </h1>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Sistema de Assistência Técnica
-            </p>
-          </div>
+          <p className="text-xs text-muted-foreground">
+            Sistema de Assistência Técnica
+          </p>
         </div>
 
         {/* ==================== CARD DE LOGIN ==================== */}
