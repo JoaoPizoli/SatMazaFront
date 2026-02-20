@@ -186,7 +186,11 @@ export function AppSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.email ?? `Cód. ${user.usuario}`}</span>
+                    <span className="truncate font-semibold">
+                      {user.tipo === UserRole.REPRESENTANTE
+                        ? (user.nome ?? `Cód. ${user.usuario}`)
+                        : (user.email ?? `Cód. ${user.usuario}`)}
+                    </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {UserRoleLabels[user.tipo]}
                     </span>
@@ -207,7 +211,11 @@ export function AppSidebar() {
                     </AvatarFallback>
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
-                    <span className="truncate font-semibold">{user.email ?? `Cód. ${user.usuario}`}</span>
+                    <span className="truncate font-semibold">
+                      {user.tipo === UserRole.REPRESENTANTE
+                        ? (user.nome ?? `Cód. ${user.usuario}`)
+                        : (user.email ?? `Cód. ${user.usuario}`)}
+                    </span>
                     <span className="truncate text-xs text-muted-foreground">
                       {UserRoleLabels[user.tipo]}
                     </span>

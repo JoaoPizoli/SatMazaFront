@@ -253,7 +253,9 @@ export function SatSendDialog({
                 <InfoRow
                   icon={User}
                   label="Representante"
-                  value={sat.representante ? `${sat.representante.usuario}` : String(sat.representante_id)}
+                  value={sat.representante
+                    ? `${sat.representante.usuario}${sat.representante.nome ? ` — ${sat.representante.nome}` : ''}`
+                    : String(sat.representante_id)}
                 />
                 <InfoRow
                   icon={Calendar}

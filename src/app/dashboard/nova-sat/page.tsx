@@ -28,7 +28,15 @@ import {
   Upload,
   X,
   AlertTriangle,
+  CheckCircle2,
 } from "lucide-react"
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog"
 
 export default function NovaSatPage() {
   const { user } = useAuth()
@@ -59,6 +67,7 @@ export default function NovaSatPage() {
   const [uploadProgress, setUploadProgress] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
+  const [countdown, setCountdown] = useState(3)
 
   // Buscar dados do representante no ERP ao montar
   useEffect(() => {
@@ -232,9 +241,16 @@ export default function NovaSatPage() {
 
       setUploadProgress("")
       setSuccess(true)
-      setTimeout(() => {
-        router.push("/dashboard/minhas-sats")
-      }, 1500)
+      let count = 3
+      setCountdown(3)
+      const interval = setInterval(() => {
+        count -= 1
+        setCountdown(count)
+        if (count === 0) {
+          clearInterval(interval)
+          router.push("/dashboard/minhas-sats")
+        }
+      }, 1000)
     } catch (err) {
       setUploadProgress("")
       if (err instanceof ApiError) {
@@ -268,11 +284,6 @@ export default function NovaSatPage() {
           <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive mb-4 flex items-start gap-2">
             <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
             {error}
-          </div>
-        )}
-        {success && (
-          <div className="rounded-md bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-700 mb-4">
-            SAT criada com sucesso! Redirecionando...
           </div>
         )}
 
@@ -600,6 +611,23 @@ export default function NovaSatPage() {
           </Button>
         </div>
       </form>
+
+      {/* Dialog de sucesso com contagem regressiva */}
+      <Dialog open={success}>
+        <DialogContent
+          className="sm:max-w-sm text-center"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
+          <DialogHeader className="items-center">
+            <CheckCircle2 className="h-12 w-12 text-green-500 mb-2 mx-auto" />
+            <DialogTitle>SAT criada com sucesso!</DialogTitle>
+            <DialogDescription>
+              Você será redirecionado para suas SATs em...
+            </DialogDescription>
+          </DialogHeader>
+          <div className="text-6xl font-bold text-primary py-4">{countdown}</div>
+        </DialogContent>
+      </Dialog>
     </PageTemplate>
   )
 }
