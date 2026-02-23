@@ -126,7 +126,7 @@ export function AppSidebar() {
               <Link href="/dashboard">
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
                   <Image
-                    src="/logo.svg"
+                    src="/logo.png"
                     alt="SatMaza"
                     width={32}
                     height={32}

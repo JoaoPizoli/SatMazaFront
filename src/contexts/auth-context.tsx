@@ -11,14 +11,14 @@ import {
 import { useRouter, usePathname } from "next/navigation"
 import type { User } from "@/types"
 import { login as apiLogin, logout as apiLogout, getMe } from "@/lib/api/auth"
-import { getStoredToken, clearStoredToken } from "@/lib/api"
+import { getStoredToken, clearAllTokens, tryRestoreSession } from "@/lib/api"
 
 type AuthContextType = {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
   login: (usuario: string, senha: string) => Promise<{ success: boolean; error?: string; pending_setup?: boolean }>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -31,36 +31,43 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
 
-  // Restaurar sessão: valida token chamando GET /auth/me
+  // Restaurar sessão ao montar o provider (inclusive após fechar e reabrir o browser)
   useEffect(() => {
     async function restoreSession() {
       try {
-        const token = getStoredToken()
+        let token = getStoredToken() // sessionStorage — apagado ao fechar o browser
+
         if (!token) {
-          setIsLoading(false)
-          return
+          // Sem access token: tentar renovar via refresh token (localStorage — persiste 15 dias)
+          const restored = await tryRestoreSession()
+          if (!restored) {
+            // Nenhuma sessão recuperável
+            setIsLoading(false)
+            return
+          }
+          token = getStoredToken() // agora tem o novo access token
         }
 
-        // Tentar restaurar do cache local primeiro (para evitar flash)
+        // Pré-popular com cache para reduzir flash (sobrescrito pela validação abaixo)
         const cached = sessionStorage.getItem(USER_STORAGE_KEY)
         if (cached) {
           try {
             setUser(JSON.parse(cached) as User)
           } catch {
-            // ignore parse error
+            // ignorar erro de parse — validação abaixo irá corrigir
           }
         }
 
-        // Validar com o backend
+        // Validar sessão com o backend e buscar dados atualizados do usuário
         const userData = await getMe()
         setUser(userData)
         sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData))
       } catch {
-        // Token inválido ou expirado
-        clearStoredToken()
-        sessionStorage.removeItem(USER_STORAGE_KEY)
+        // Token inválido/expirado e refresh falhou — limpar tudo
+        clearAllTokens()
         setUser(null)
       } finally {
+        // Só libera a renderização após validação completa
         setIsLoading(false)
       }
     }
@@ -68,7 +75,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     restoreSession()
   }, [])
 
-  // Redirecionamentos automáticos
+  // Redirecionamentos automáticos (só executam após isLoading = false)
   useEffect(() => {
     if (isLoading) return
 
@@ -86,18 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const login = useCallback(
     async (
       usuario: string,
-      senha: string
+      senha: string,
     ): Promise<{ success: boolean; error?: string; pending_setup?: boolean }> => {
       try {
-        // Chama POST /auth/login — armazena token internamente
         const res = await apiLogin(usuario, senha)
 
-        // Se tiver flag pending_setup, retornamos isso para o componente tratar o redirect
         if (res.pending_setup) {
           return { success: true, pending_setup: true }
         }
 
-        // Buscar dados completos do usuário
         const userData = await getMe()
         setUser(userData)
         sessionStorage.setItem(USER_STORAGE_KEY, JSON.stringify(userData))
@@ -109,17 +113,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         return { success: false, error: message }
       }
     },
-    []
+    [],
   )
 
   const logout = useCallback(async () => {
     try {
       await apiLogout()
     } catch {
-      // Mesmo se falhar, limpar sessão local
+      // Mesmo se o backend falhar, garantir limpeza local
+      clearAllTokens()
     }
     setUser(null)
-    sessionStorage.removeItem(USER_STORAGE_KEY)
     router.replace("/login")
   }, [router])
 

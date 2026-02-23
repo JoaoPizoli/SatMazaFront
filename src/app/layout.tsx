@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider } from "@/contexts/auth-context";
+import { ErrorBoundary } from "@/components/error-boundary";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -22,8 +23,8 @@ export const metadata: Metadata = {
   description: "Sistema de Solicitação de Assistência Técnica",
   keywords: ["SAT", "Assistência Técnica", "SatMaza"],
   icons: {
-    icon: "/logo.svg",
-    apple: "/logo.svg",
+    icon: "/logo.png",
+    apple: "/logo.png",
   },
 };
 
@@ -37,11 +38,13 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <TooltipProvider>
-          <AuthProvider>
-            {children}
-          </AuthProvider>
-        </TooltipProvider>
+        <ErrorBoundary>
+          <TooltipProvider>
+            <AuthProvider>
+              {children}
+            </AuthProvider>
+          </TooltipProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
