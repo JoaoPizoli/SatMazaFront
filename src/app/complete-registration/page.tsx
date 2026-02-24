@@ -43,6 +43,22 @@ export default function CompleteRegistrationPage() {
         defaultValues: { email: "", senha: "", confirmSenha: "" },
     })
 
+    // Intercepta o botão "Voltar" do navegador e trata como logout.
+    // Ao montar, empurramos um estado duplicado no histórico para que o
+    // primeiro "back" dispare o popstate ainda na mesma URL.
+    // Quando o popstate chega, fazemos logout: limpamos tokens e
+    // redirecionamos para /login via router, evitando bfcache.
+    useEffect(() => {
+        window.history.pushState(null, "", window.location.href)
+
+        const handlePopState = () => {
+            logout()
+        }
+
+        window.addEventListener("popstate", handlePopState)
+        return () => window.removeEventListener("popstate", handlePopState)
+    }, [logout])
+
     // Busca o nome no ERP logo ao montar a página
     useEffect(() => {
         apiGet<{ nome: string | null }>("/usuario/meu-nome-erp")
