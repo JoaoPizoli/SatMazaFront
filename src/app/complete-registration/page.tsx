@@ -1,10 +1,10 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
-import { Loader2 } from "lucide-react"
+import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react"
 import { useRouter } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/components/ui/use-toast"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { apiPost } from "@/lib/api"
+import { apiPost, apiGet } from "@/lib/api"
 import { useAuth } from "@/contexts/auth-context"
 
 const formSchema = z.object({
@@ -25,11 +25,13 @@ const formSchema = z.object({
 })
 
 type FormData = z.infer<typeof formSchema>
+type NomeStatus = "loading" | "loaded" | "error"
 
 export default function CompleteRegistrationPage() {
     const { toast } = useToast()
     const router = useRouter()
     const [isLoading, setIsLoading] = useState(false)
+    const [nomeStatus, setNomeStatus] = useState<NomeStatus>("loading")
     const { logout } = useAuth()
 
     const {
@@ -38,14 +40,27 @@ export default function CompleteRegistrationPage() {
         formState: { errors },
     } = useForm<FormData>({
         resolver: zodResolver(formSchema),
-        defaultValues: {
-            email: "",
-            senha: "",
-            confirmSenha: "",
-        },
+        defaultValues: { email: "", senha: "", confirmSenha: "" },
     })
 
+    // Busca o nome no ERP logo ao montar a página
+    useEffect(() => {
+        apiGet<{ nome: string | null }>("/usuario/meu-nome-erp")
+            .then((res) => {
+                setNomeStatus(res.nome ? "loaded" : "error")
+            })
+            .catch(() => {
+                setNomeStatus("error")
+            })
+    }, [])
+
     async function onSubmit(values: FormData) {
+        // Se o nome do ERP ainda não foi carregado, não deixa prosseguir
+        if (nomeStatus !== "loaded") {
+            router.replace("/login?error=nome_erp")
+            return
+        }
+
         setIsLoading(true)
         try {
             await apiPost("/usuario/complete-registration", {
@@ -80,7 +95,31 @@ export default function CompleteRegistrationPage() {
                         É necessário atualizar seus dados e senha para continuar.
                     </CardDescription>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="space-y-4">
+
+                    {/* Status da identificação no ERP */}
+                    {nomeStatus === "loading" && (
+                        <div className="flex items-center gap-2 rounded-lg border border-muted bg-muted/40 px-4 py-3 text-sm text-muted-foreground">
+                            <Loader2 className="h-4 w-4 animate-spin shrink-0" />
+                            <span>Identificando seu perfil no sistema...</span>
+                        </div>
+                    )}
+                    {nomeStatus === "loaded" && (
+                        <div className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-700">
+                            <CheckCircle2 className="h-4 w-4 shrink-0" />
+                            <span>Perfil identificado. Preencha seus dados abaixo.</span>
+                        </div>
+                    )}
+                    {nomeStatus === "error" && (
+                        <div className="flex items-start gap-2 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                            <span>
+                                Não foi possível identificar seu perfil no sistema.
+                                Se clicar em salvar, será redirecionado para tentar novamente.
+                            </span>
+                        </div>
+                    )}
+
                     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
                         <div className="space-y-2">
                             <Label htmlFor="email" className="font-bold">

@@ -66,6 +66,7 @@ export async function getMe(): Promise<User> {
     email: string | null
     tipo: string
     createdAt: string
+    password_changed: boolean
   }>("/auth/me")
 
   return {
@@ -75,6 +76,7 @@ export async function getMe(): Promise<User> {
     email: data.email,
     tipo: data.tipo as User["tipo"],
     createdAt: data.createdAt,
+    password_changed: data.password_changed ?? false,
   }
 }
 

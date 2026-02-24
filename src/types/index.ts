@@ -31,6 +31,7 @@ export type User = {
   email: string | null
   tipo: UserRole
   createdAt: string
+  password_changed: boolean
 }
 
 export type AuthState = {

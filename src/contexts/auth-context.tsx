@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import type { User } from "@/types"
+import { UserRole, type User } from "@/types"
 import { login as apiLogin, logout as apiLogout, getMe } from "@/lib/api/auth"
 import { getStoredToken, clearAllTokens, tryRestoreSession } from "@/lib/api"
 
@@ -82,10 +82,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const isLoginPage = pathname === "/login"
     const isCompleteRegistrationPage = pathname === "/complete-registration"
     const isAuthenticated = !!user
+    const needsSetup =
+      isAuthenticated &&
+      user!.tipo === UserRole.REPRESENTANTE &&
+      !user!.password_changed
 
     if (!isAuthenticated && !isLoginPage && !isCompleteRegistrationPage) {
       router.replace("/login")
-    } else if (isAuthenticated && isLoginPage) {
+    } else if (needsSetup && !isCompleteRegistrationPage) {
+      // Representante com cadastro incompleto: redireciona independente de onde estiver
+      router.replace("/complete-registration")
+    } else if (isAuthenticated && !needsSetup && isLoginPage) {
       router.replace("/dashboard")
     }
   }, [user, isLoading, pathname, router])

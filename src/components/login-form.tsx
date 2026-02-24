@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form"
 import { useAuth } from "@/contexts/auth-context"
 import { Phone, Eye, EyeOff, Loader2, User, Lock, AlertCircle } from "lucide-react"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -25,6 +26,7 @@ type LoginFormData = {
 
 export function LoginForm() {
   const { login } = useAuth()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -34,6 +36,11 @@ export function LoginForm() {
     handleSubmit,
     formState: { errors },
   } = useForm<LoginFormData>()
+
+  // Mensagem de erro vinda de redirecionamentos externos (ex: complete-registration)
+  const externalError = searchParams.get("error") === "nome_erp"
+    ? "Não foi possível identificar seu perfil no sistema. Aguarde 1 minuto e tente novamente. Caso o problema persista, entre em contato com o suporte: (19) 99745-9819."
+    : null
 
   async function onSubmit(data: LoginFormData) {
     setError("")
@@ -83,12 +90,20 @@ export function LoginForm() {
           </CardHeader>
 
           <CardContent>
+            {/* Erro externo (ex: ERP indisponível no primeiro acesso) */}
+            {externalError && (
+              <div className="mb-4 flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+                <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>{externalError}</span>
+              </div>
+            )}
+
             <form
               id="login-form"
               onSubmit={handleSubmit(onSubmit)}
               className="space-y-4"
             >
-              {/* Erro geral */}
+              {/* Erro de credenciais */}
               {error && (
                 <div className="flex items-start gap-2.5 rounded-lg border border-destructive/30 bg-destructive/10 px-4 py-3 text-sm text-destructive">
                   <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
