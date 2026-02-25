@@ -13,6 +13,7 @@ import { ApiError } from "@/lib/api"
 import type { ErpCliente, ErpRepresentante, ErpProduto } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateInput } from "@/components/ui/date-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
@@ -386,12 +387,10 @@ export default function NovaSatPage() {
                         disabled={isSubmitting}
                       />
                     </div>
-                    <div className="w-40">
-                      <Input
-                        type="date"
-                        max="9999-12-31"
+                    <div className="w-44">
+                      <DateInput
                         value={item.validade}
-                        onChange={(e) => handleLoteChange(index, 'validade', e.target.value)}
+                        onChange={(v) => handleLoteChange(index, 'validade', v)}
                         disabled={isSubmitting}
                         required
                       />

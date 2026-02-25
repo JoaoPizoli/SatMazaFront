@@ -3,6 +3,7 @@
 import { Filter, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateInput } from "@/components/ui/date-input"
 import {
   Select,
   SelectContent,
@@ -63,25 +64,19 @@ export function SatFiltersBar({
           </Select>
         )}
 
-        <Input
-          type="date"
-          max="9999-12-31"
+        <DateInput
           value={dataInicio}
-          onChange={(e) => onDataInicioChange(e.target.value)}
-          className="h-8 w-[145px] text-xs"
-          placeholder="De"
+          onChange={onDataInicioChange}
+          className="h-8 w-[155px] text-xs"
           title="Data início"
         />
 
         <span className="text-xs text-muted-foreground">até</span>
 
-        <Input
-          type="date"
-          max="9999-12-31"
+        <DateInput
           value={dataFim}
-          onChange={(e) => onDataFimChange(e.target.value)}
-          className="h-8 w-[145px] text-xs"
-          placeholder="Até"
+          onChange={onDataFimChange}
+          className="h-8 w-[155px] text-xs"
           title="Data fim"
         />
 

@@ -16,6 +16,7 @@ import {
 import { getRepresentantes } from "@/lib/api/usuario"
 import { DashboardChartData, DashboardFilter, User, ErpProduto } from "@/types"
 import { Input } from "@/components/ui/input"
+import { DateInput } from "@/components/ui/date-input"
 import {
     Select,
     SelectContent,
@@ -157,18 +158,16 @@ export default function AdminDashboardPage() {
                         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 items-end">
                             <div className="space-y-2">
                                 <Label>Data Inicial</Label>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     value={startDate}
-                                    onChange={(e) => setStartDate(e.target.value)}
+                                    onChange={setStartDate}
                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label>Data Final</Label>
-                                <Input
-                                    type="date"
+                                <DateInput
                                     value={endDate}
-                                    onChange={(e) => setEndDate(e.target.value)}
+                                    onChange={setEndDate}
                                 />
                             </div>
                             <div className="space-y-2">

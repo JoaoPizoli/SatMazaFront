@@ -47,6 +47,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { DateInput } from "@/components/ui/date-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
@@ -748,12 +749,10 @@ export function SatDetailDialog({
                         {new Date(formData.data).toLocaleDateString("pt-BR")}
                       </p>
                     ) : (
-                      <Input
+                      <DateInput
                         id="avt-data"
-                        type="date"
-                        max="9999-12-31"
                         value={formData.data}
-                        onChange={(e) => updateField("data", e.target.value)}
+                        onChange={(v) => updateField("data", v)}
                       />
                     )}
                   </div>
