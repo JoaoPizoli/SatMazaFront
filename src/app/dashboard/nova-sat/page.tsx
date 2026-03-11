@@ -206,7 +206,7 @@ export default function NovaSatPage() {
     // Validar se todos têm validade
     const missingValidade = validLotes.filter(l => !l.validade);
     if (missingValidade.length > 0) {
-      setError(`Informe a data de validade para todos os lotes.`)
+      setError(`Informe uma data de validade válida para ${missingValidade.length === 1 ? 'o lote' : 'os lotes'}: ${missingValidade.map(l => l.lote).join(", ")}`)
       return
     }
 
