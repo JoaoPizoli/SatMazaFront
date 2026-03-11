@@ -118,18 +118,18 @@ export default function NovaSatPage() {
   }
 
   function handleLoteChange(index: number, field: 'lote' | 'validade', value: string) {
-    const updated = [...lotes]
-    if (field === 'lote') {
-      const digits = value.replace(/\D/g, "").slice(0, 9)
-      let formatted = digits
-      if (digits.length > 6) {
-        formatted = `${digits.slice(0, 6)}-${digits.slice(6)}`
+    setLotes(prev => prev.map((item, i) => {
+      if (i !== index) return item
+      if (field === 'lote') {
+        const digits = value.replace(/\D/g, "").slice(0, 9)
+        let formatted = digits
+        if (digits.length > 6) {
+          formatted = `${digits.slice(0, 6)}-${digits.slice(6)}`
+        }
+        return { ...item, lote: formatted }
       }
-      updated[index].lote = formatted
-    } else {
-      updated[index].validade = value
-    }
-    setLotes(updated)
+      return { ...item, validade: value }
+    }))
   }
 
   function handleTelefoneChange(value: string) {
@@ -316,7 +316,7 @@ export default function NovaSatPage() {
 
             {/* Cliente */}
             <div className="space-y-2">
-              <Label>Cliente</Label>
+              <Label>Cliente <span className="text-destructive">*</span></Label>
               <ClientSearchSelect
                 onSelect={handleClienteSelect}
                 onClear={() => { setCliente(""); setCidade(""); }}
@@ -345,7 +345,7 @@ export default function NovaSatPage() {
 
             {/* Produto */}
             <div className="space-y-2">
-              <Label>Produto</Label>
+              <Label>Produto <span className="text-destructive">*</span></Label>
               <ProductSearchSelect
                 onSelect={handleProdutoSelect}
                 onClear={() => setProdutos("")}
@@ -360,7 +360,7 @@ export default function NovaSatPage() {
 
             {/* Quantidade */}
             <div className="space-y-2 max-w-xs">
-              <Label htmlFor="quantidade">Quantidade</Label>
+              <Label htmlFor="quantidade">Quantidade <span className="text-destructive">*</span></Label>
               <Input
                 id="quantidade"
                 type="number"
@@ -374,7 +374,7 @@ export default function NovaSatPage() {
 
             {/* Lotes e Validades dinâmicos */}
             <div className="space-y-2">
-              <Label>Lotes e Validades (Lote: 000000-000)</Label>
+              <Label>Lotes e Validades (Lote: 000000-000) <span className="text-destructive">*</span></Label>
               <div className="space-y-3">
                 {lotes.map((item, index) => (
                   <div key={index} className="flex gap-2 items-start">
@@ -446,7 +446,7 @@ export default function NovaSatPage() {
             {/* Contato e Telefone */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="contato">Nome do Contato</Label>
+                <Label htmlFor="contato">Nome do Contato <span className="text-destructive">*</span></Label>
                 <Input
                   id="contato"
                   value={contato}
@@ -457,7 +457,7 @@ export default function NovaSatPage() {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="telefone">Telefone</Label>
+                <Label htmlFor="telefone">Telefone <span className="text-destructive">*</span></Label>
                 <Input
                   id="telefone"
                   value={telefone}
@@ -474,7 +474,7 @@ export default function NovaSatPage() {
 
             {/* Reclamação */}
             <div className="space-y-2">
-              <Label htmlFor="reclamacao">Descrição da Reclamação</Label>
+              <Label htmlFor="reclamacao">Descrição da Reclamação <span className="text-destructive">*</span></Label>
               <Textarea
                 id="reclamacao"
                 value={reclamacao}

@@ -433,6 +433,7 @@ export function SatDetailDialog({
     if (!formData.averigucao_tecnica?.trim()) errors.push("Averiguação Técnica")
     if (!formData.possiveis_causas?.trim()) errors.push("Possíveis Causas")
     if (!formData.solucao?.trim()) errors.push("Solução Proposta")
+    if (!formData.data?.trim()) errors.push("Data da Averiguação")
 
     if (errors.length > 0) {
       setUploadError(`Preencha os campos obrigatórios: ${errors.join(", ")}`)
@@ -478,13 +479,8 @@ export function SatDetailDialog({
     // Verificar campos obrigatórios
     if (!validateAvtFields()) return
 
-    // Verificar se laudo está anexado
-    if (!hasLaudo) {
-      setUploadError("Anexe um laudo para finalizar a análise.")
-      return
-    }
     setConfirmOpen(true)
-  }, [hasLaudo, validateAvtFields])
+  }, [validateAvtFields])
 
   const handleConfirmFinalizar = useCallback(async () => {
     setConfirmOpen(false)
@@ -629,7 +625,7 @@ export function SatDetailDialog({
                   {/* Averiguação técnica */}
                   <div className="space-y-2">
                     <Label htmlFor="avt-averigucao">
-                      Averiguação Técnica
+                      Averiguação Técnica {!readOnly && <span className="text-destructive">*</span>}
                     </Label>
                     {readOnly ? (
                       <p className="text-sm whitespace-pre-wrap">
@@ -650,7 +646,7 @@ export function SatDetailDialog({
 
                   {/* Possíveis causas */}
                   <div className="space-y-2">
-                    <Label htmlFor="avt-causas">Possíveis Causas</Label>
+                    <Label htmlFor="avt-causas">Possíveis Causas {!readOnly && <span className="text-destructive">*</span>}</Label>
                     {readOnly ? (
                       <p className="text-sm whitespace-pre-wrap">
                         {formData.possiveis_causas}
@@ -723,7 +719,7 @@ export function SatDetailDialog({
 
                   {/* Solução */}
                   <div className="space-y-2">
-                    <Label htmlFor="avt-solucao">Solução Proposta</Label>
+                    <Label htmlFor="avt-solucao">Solução Proposta {!readOnly && <span className="text-destructive">*</span>}</Label>
                     {readOnly ? (
                       <p className="text-sm whitespace-pre-wrap">
                         {formData.solucao || "—"}
@@ -743,7 +739,7 @@ export function SatDetailDialog({
 
                   {/* Data da averiguação */}
                   <div className="space-y-2 max-w-xs">
-                    <Label htmlFor="avt-data">Data da Averiguação</Label>
+                    <Label htmlFor="avt-data">Data da Averiguação {!readOnly && <span className="text-destructive">*</span>}</Label>
                     {readOnly ? (
                       <p className="text-sm">
                         {new Date(formData.data).toLocaleDateString("pt-BR")}
@@ -770,7 +766,7 @@ export function SatDetailDialog({
                   {/* Upload de Laudo */}
                   <div className="space-y-2">
                     <Label>
-                      Laudo / Relatório <span className="text-destructive">*</span>
+                      Laudo / Relatório
                     </Label>
 
                     {/* Visualização de Laudo Já Existente no Backend */}
