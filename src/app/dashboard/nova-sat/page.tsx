@@ -280,14 +280,6 @@ export default function NovaSatPage() {
       description="Criar uma nova Solicitação de Assistência Técnica"
     >
       <form onSubmit={handleSubmit}>
-        {/* Mensagens */}
-        {error && (
-          <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive mb-4 flex items-start gap-2">
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
-            {error}
-          </div>
-        )}
-
         {/* ── Card único com todo o formulário ────────────────────────── */}
         <Card>
           <CardHeader className="pb-3">
@@ -586,6 +578,12 @@ export default function NovaSatPage() {
         </Card>
 
         {/* ── Ações ───────────────────────────────────────────────────── */}
+        {error && (
+          <div className="rounded-md bg-destructive/10 px-4 py-3 text-sm text-destructive mt-4 flex items-start gap-2">
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
+            {error}
+          </div>
+        )}
         <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-4">
           <Button
             type="button"
