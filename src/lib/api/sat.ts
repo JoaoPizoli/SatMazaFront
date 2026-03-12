@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api"
-import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData } from "@/types"
+import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData, ProcedenteByLabData } from "@/types"
 
 interface PaginatedResponse<T> {
   data: T[]
@@ -119,6 +119,7 @@ function buildFilterQuery(filter: DashboardFilter): string {
   if (filter.representanteId) query.append('representanteId', String(filter.representanteId))
   if (filter.representanteCodigo) query.append('representanteCodigo', filter.representanteCodigo) // Added
   if (filter.produto) query.append('produto', filter.produto)
+  if (filter.procedente) query.append('procedente', filter.procedente)
   return query.toString()
 }
 
@@ -160,4 +161,24 @@ export async function getSatsStatusStats(
 ): Promise<DashboardChartData[]> {
   const query = buildFilterQuery(filter)
   return apiGet<DashboardChartData[]>(`/sat/dashboard/status?${query}`)
+}
+
+/**
+ * Buscar estatísticas de SATs por procedência (procedente/improcedente/pendente).
+ */
+export async function getSatsByProcedente(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/procedente?${query}`)
+}
+
+/**
+ * Buscar estatísticas de procedência agrupadas por laboratório.
+ */
+export async function getProcedenteByLab(
+  filter: DashboardFilter
+): Promise<ProcedenteByLabData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<ProcedenteByLabData[]>(`/sat/dashboard/procedente-by-lab?${query}`)
 }

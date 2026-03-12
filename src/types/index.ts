@@ -220,9 +220,16 @@ export type DashboardFilter = {
   representanteId?: number
   representanteCodigo?: string
   produto?: string
+  procedente?: 'true' | 'false'
 }
 
 export type DashboardChartData = {
   name: string
   value: number
+}
+
+export type ProcedenteByLabData = {
+  name: string
+  procedente: number
+  improcedente: number
 }

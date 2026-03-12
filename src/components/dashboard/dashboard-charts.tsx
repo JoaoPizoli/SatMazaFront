@@ -7,7 +7,7 @@ import {
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
-import { DashboardChartData } from "@/types"
+import type { DashboardChartData, ProcedenteByLabData } from "@/types"
 import {
     PieChart,
     Pie,
@@ -22,7 +22,6 @@ import {
     CartesianGrid,
 } from "recharts"
 
-// Paleta de cores mais vibrante e profissional
 const COLORS = [
     "#3b82f6", // Blue 500
     "#10b981", // Emerald 500
@@ -33,7 +32,31 @@ const COLORS = [
     "#06b6d4", // Cyan 500
 ]
 
-const TABLE_COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"]
+const BAR_COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"]
+
+const PROCEDENTE_COLORS: Record<string, string> = {
+    Procedente: "#10b981",
+    Improcedente: "#ef4444",
+    Pendente: "#94a3b8",
+}
+
+const tooltipStyle = {
+    contentStyle: {
+        backgroundColor: "hsl(var(--card))",
+        borderColor: "hsl(var(--border))",
+        borderRadius: "8px",
+        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
+    },
+    itemStyle: { color: "hsl(var(--foreground))" },
+}
+
+function EmptyState() {
+    return (
+        <div className="flex h-full items-center justify-center text-muted-foreground text-sm">
+            Sem dados disponíveis
+        </div>
+    )
+}
 
 interface ChartProps {
     data: DashboardChartData[]
@@ -41,26 +64,26 @@ interface ChartProps {
 
 export function SatsBySectorChart({ data }: ChartProps) {
     return (
-        <Card className="flex flex-col h-full shadow-md border-t-4 border-t-blue-500">
+        <Card className="flex flex-col h-full">
             <CardHeader>
                 <CardTitle>SATs por Setor</CardTitle>
                 <CardDescription>Distribuição por destino</CardDescription>
             </CardHeader>
-            <CardContent className="flex-1 pb-0">
-                <div className="h-[300px] w-full">
+            <CardContent className="flex-1 pb-4">
+                <div className="h-[280px] w-full">
                     {data.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <PieChart>
                                 <Pie
                                     data={data}
                                     cx="50%"
-                                    cy="50%"
-                                    innerRadius={60} // Donut chart looks cleaner
+                                    cy="45%"
+                                    innerRadius={55}
                                     outerRadius={80}
                                     paddingAngle={5}
                                     dataKey="value"
                                 >
-                                    {data.map((entry, index) => (
+                                    {data.map((_entry, index) => (
                                         <Cell
                                             key={`cell-${index}`}
                                             fill={COLORS[index % COLORS.length]}
@@ -68,26 +91,12 @@ export function SatsBySectorChart({ data }: ChartProps) {
                                         />
                                     ))}
                                 </Pie>
-                                <Tooltip
-                                    contentStyle={{
-                                        backgroundColor: "hsl(var(--card))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "8px",
-                                        boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
-                                    }}
-                                    itemStyle={{ color: "hsl(var(--foreground))" }}
-                                />
-                                <Legend
-                                    verticalAlign="bottom"
-                                    height={36}
-                                    iconType="circle"
-                                />
+                                <Tooltip {...tooltipStyle} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
                             </PieChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                            Sem dados disponíveis
-                        </div>
+                        <EmptyState />
                     )}
                 </div>
             </CardContent>
@@ -96,17 +105,16 @@ export function SatsBySectorChart({ data }: ChartProps) {
 }
 
 export function SatsByRepresentativeChart({ data }: ChartProps) {
-    // Take top 10 for chart clarity
     const chartData = data.slice(0, 10)
 
     return (
-        <Card className="h-full shadow-md border-t-4 border-t-violet-500">
+        <Card className="h-full">
             <CardHeader>
                 <CardTitle>Top Representantes</CardTitle>
                 <CardDescription>SATs abertas por representante</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-[350px] w-full">
+                <div className="h-[300px] w-full">
                     {data.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
@@ -114,7 +122,7 @@ export function SatsByRepresentativeChart({ data }: ChartProps) {
                                 data={chartData}
                                 margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e5e7eb" />
+                                <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="#e5e7eb" />
                                 <XAxis type="number" hide />
                                 <YAxis
                                     dataKey="name"
@@ -124,26 +132,16 @@ export function SatsByRepresentativeChart({ data }: ChartProps) {
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip
-                                    cursor={{ fill: "transparent" }}
-                                    contentStyle={{
-                                        backgroundColor: "hsl(var(--card))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "8px",
-                                    }}
-                                    itemStyle={{ color: "hsl(var(--foreground))" }}
-                                />
-                                <Bar dataKey="value" name="SATs" radius={[0, 4, 4, 0]} barSize={32}>
-                                    {chartData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={TABLE_COLORS[index % TABLE_COLORS.length]} />
+                                <Tooltip cursor={{ fill: "transparent" }} {...tooltipStyle} />
+                                <Bar dataKey="value" name="SATs" radius={[0, 4, 4, 0]} barSize={28}>
+                                    {chartData.map((_entry, index) => (
+                                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                            Sem dados disponíveis
-                        </div>
+                        <EmptyState />
                     )}
                 </div>
             </CardContent>
@@ -152,21 +150,21 @@ export function SatsByRepresentativeChart({ data }: ChartProps) {
 }
 
 export function TopProductsChart({ data }: ChartProps) {
-    const chartData = data.slice(0, 5) // Top 5 products
+    const chartData = data.slice(0, 5)
 
     return (
-        <Card className="h-full shadow-md border-t-4 border-t-emerald-500">
+        <Card className="h-full">
             <CardHeader>
                 <CardTitle>Top Produtos</CardTitle>
                 <CardDescription>Produtos com maior incidência</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-[350px] w-full">
+                <div className="h-[280px] w-full">
                     {data.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 data={chartData}
-                                margin={{ top: 20, right: 30, left: 20, bottom: 5 }}
+                                margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
                             >
                                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
                                 <XAxis
@@ -174,28 +172,112 @@ export function TopProductsChart({ data }: ChartProps) {
                                     tick={{ fontSize: 11 }}
                                     tickLine={false}
                                     interval={0}
-                                    tickFormatter={(val) => val.length > 15 ? `${val.substring(0, 12)}...` : val}
+                                    tickFormatter={(val: string) =>
+                                        val.length > 12 ? `${val.substring(0, 10)}…` : val
+                                    }
                                 />
                                 <YAxis hide />
-                                <Tooltip
-                                    cursor={{ fill: "#f3f4f6" }}
-                                    contentStyle={{
-                                        backgroundColor: "hsl(var(--card))",
-                                        borderColor: "hsl(var(--border))",
-                                        borderRadius: "8px",
-                                    }}
-                                />
-                                <Bar dataKey="value" name="SATs" fill="#10b981" radius={[4, 4, 0, 0]} barSize={48}>
-                                    {chartData.map((entry, index) => (
+                                <Tooltip cursor={{ fill: "#f3f4f6" }} {...tooltipStyle} />
+                                <Bar dataKey="value" name="SATs" radius={[4, 4, 0, 0]} barSize={40}>
+                                    {chartData.map((_entry, index) => (
                                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                     ))}
                                 </Bar>
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
-                        <div className="flex h-full items-center justify-center text-muted-foreground">
-                            Sem dados disponíveis
-                        </div>
+                        <EmptyState />
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+export function ProcedenteChart({ data }: ChartProps) {
+    return (
+        <Card className="flex flex-col h-full">
+            <CardHeader>
+                <CardTitle>Procedência</CardTitle>
+                <CardDescription>SATs procedentes vs improcedentes</CardDescription>
+            </CardHeader>
+            <CardContent className="flex-1 pb-4">
+                <div className="h-[280px] w-full">
+                    {data.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                                <Pie
+                                    data={data}
+                                    cx="50%"
+                                    cy="45%"
+                                    innerRadius={55}
+                                    outerRadius={80}
+                                    paddingAngle={5}
+                                    dataKey="value"
+                                >
+                                    {data.map((entry, index) => (
+                                        <Cell
+                                            key={`cell-${index}`}
+                                            fill={PROCEDENTE_COLORS[entry.name] ?? COLORS[index % COLORS.length]}
+                                            strokeWidth={0}
+                                        />
+                                    ))}
+                                </Pie>
+                                <Tooltip {...tooltipStyle} />
+                                <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                            </PieChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyState />
+                    )}
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
+export function ProcedenteByLabChart({ data }: { data: ProcedenteByLabData[] }) {
+    return (
+        <Card className="h-full">
+            <CardHeader>
+                <CardTitle>Procedência por Lab</CardTitle>
+                <CardDescription>Procedente vs improcedente por laboratório</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="h-[280px] w-full">
+                    {data.length > 0 ? (
+                        <ResponsiveContainer width="100%" height="100%">
+                            <BarChart
+                                data={data}
+                                margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
+                            >
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                <XAxis
+                                    dataKey="name"
+                                    tick={{ fontSize: 12 }}
+                                    tickLine={false}
+                                />
+                                <YAxis hide />
+                                <Tooltip cursor={{ fill: "#f3f4f6" }} {...tooltipStyle} />
+                                <Legend iconType="circle" />
+                                <Bar
+                                    dataKey="procedente"
+                                    name="Procedente"
+                                    fill="#10b981"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={32}
+                                />
+                                <Bar
+                                    dataKey="improcedente"
+                                    name="Improcedente"
+                                    fill="#ef4444"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={32}
+                                />
+                            </BarChart>
+                        </ResponsiveContainer>
+                    ) : (
+                        <EmptyState />
                     )}
                 </div>
             </CardContent>
