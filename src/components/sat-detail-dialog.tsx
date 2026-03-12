@@ -779,13 +779,16 @@ export function SatDetailDialog({
                     ) : (
                       <div className="space-y-3">
                         {/* Se já existe um laudo salvo ou selecionado */}
-                        {(avt?.laudo || formData.laudoFile) && (
+                        {((avt?.laudo && formData.media_id) || formData.laudoFile) && (
                           <div className="flex flex-col gap-2">
                             {/* Laudo salvo no banco */}
-                            {avt?.laudo && !formData.laudoFile && (
+                            {avt?.laudo && formData.media_id && !formData.laudoFile && (
                               <LaudoCard
                                 laudo={avt.laudo}
-                                readOnly // No modo edição, não deixamos deletar direto daqui por enquanto, só substituir
+                                onRemove={() => {
+                                  updateField("media_id", null)
+                                  setLaudoFileName("")
+                                }}
                               />
                             )}
 
@@ -820,7 +823,7 @@ export function SatDetailDialog({
                             className={`flex items-center gap-2 px-4 py-2 border border-dashed rounded-md cursor-pointer hover:bg-muted/50 transition-colors text-sm w-full justify-center ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                           >
                             <Upload className="h-4 w-4" />
-                            {formData.laudoFile ? "Substituir arquivo" : (avt?.laudo ? "Substituir laudo existente" : "Selecionar arquivo do laudo")}
+                            {formData.laudoFile ? "Substituir arquivo" : (avt?.laudo && formData.media_id ? "Substituir laudo existente" : "Selecionar arquivo do laudo")}
                           </label>
                           <Input
                             id="avt-laudo"
