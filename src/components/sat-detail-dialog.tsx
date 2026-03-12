@@ -446,8 +446,6 @@ export function SatDetailDialog({
     if (!sat) return
     setUploadError(null)
 
-    if (!validateAvtFields()) return
-
     try {
       const mediaId = await uploadLaudoIfNeeded()
       const saveData = { ...formData, media_id: mediaId }
@@ -458,7 +456,7 @@ export function SatDetailDialog({
     } catch {
       // uploadError já foi setado
     }
-  }, [formData, sat, onSave, onOpenChange, validateAvtFields, uploadLaudoIfNeeded])
+  }, [formData, sat, onSave, onOpenChange, uploadLaudoIfNeeded])
 
   const handleChangeStatus = useCallback(async () => {
     if (!sat) return
