@@ -90,8 +90,8 @@ export function UserDialog({ open, onOpenChange, userToEdit, onSuccess }: UserDi
             if (userToEdit) {
                 // Edit
                 const updateData: UpdateUserDto = {
-                    nome: values.nome,
-                    email: values.email || undefined,
+                    nome: values.nome || null,
+                    email: values.email || null,
                     tipo: values.perfil,
                 }
                 if (values.senha) {

@@ -9,7 +9,13 @@ export type CreateUserDto = {
     nome?: string
 }
 
-export type UpdateUserDto = Partial<CreateUserDto>
+export type UpdateUserDto = {
+    usuario?: string
+    email?: string | null
+    senha?: string
+    tipo?: string
+    nome?: string | null
+}
 
 export async function getUsers(): Promise<User[]> {
     const res = await apiGet<User[]>("/usuario")
