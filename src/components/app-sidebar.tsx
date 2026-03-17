@@ -88,6 +88,10 @@ function getNavItems(tipo: UserRole): NavItem[] {
         { title: "Em Análise", href: "/dashboard/em-analise", icon: Search },
         { title: "Finalizadas", href: "/dashboard/finalizadas", icon: CheckCircle },
       ]
+    case UserRole.REPRE_ATENDENTE:
+      return [
+        { title: "Indicadores", href: "/dashboard/admin", icon: BarChart3 },
+      ]
     default:
       return [
         { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
@@ -115,6 +119,7 @@ export function AppSidebar() {
   if (!user) return null
 
   const navItems = getNavItems(user.tipo)
+  const homeHref = user.tipo === UserRole.REPRE_ATENDENTE ? "/dashboard/admin" : "/dashboard"
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -123,7 +128,7 @@ export function AppSidebar() {
         <SidebarMenu>
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
-              <Link href="/dashboard">
+              <Link href={homeHref}>
                 <div className="flex aspect-square size-8 items-center justify-center overflow-hidden rounded-lg">
                   <Image
                     src="/logo.png"
@@ -187,7 +192,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {user.tipo === UserRole.REPRESENTANTE
+                      {user.tipo === UserRole.REPRESENTANTE || user.tipo === UserRole.REPRE_ATENDENTE
                         ? (user.nome ?? `Cód. ${user.usuario}`)
                         : (user.email ?? `Cód. ${user.usuario}`)}
                     </span>
@@ -212,7 +217,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {user.tipo === UserRole.REPRESENTANTE
+                      {user.tipo === UserRole.REPRESENTANTE || user.tipo === UserRole.REPRE_ATENDENTE
                         ? (user.nome ?? `Cód. ${user.usuario}`)
                         : (user.email ?? `Cód. ${user.usuario}`)}
                     </span>

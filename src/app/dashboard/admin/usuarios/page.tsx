@@ -36,6 +36,7 @@ import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/components/ui/use-toast"
 import { UserDialog } from "@/components/user-dialog"
 import { PageTemplate } from "@/components/page-template"
+import { RepreAtendenteSection } from "@/components/repre-atendente-section"
 import { User, UserRole, UserRoleLabels } from "@/types"
 import { getUsers, deleteUser } from "@/lib/api/usuarios"
 
@@ -283,6 +284,9 @@ export default function AdminUsersPage() {
                     </AlertDialogFooter>
                 </AlertDialogContent>
             </AlertDialog>
+
+            {/* Representantes Comerciais */}
+            <RepreAtendenteSection />
         </PageTemplate>
     )
 }

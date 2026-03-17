@@ -40,3 +40,21 @@ export async function updateUser(id: number, data: UpdateUserDto): Promise<User>
 export async function deleteUser(id: number): Promise<void> {
     await apiDelete(`/usuario/${id}`)
 }
+
+// ─── RepreAtendente ──────────────────────────────────────────────────────
+
+export type RepreAtendente = {
+    id: number
+    usuarios: string[]
+    nome_representante_comercial: string
+    email_representante_comercial: string
+    password_changed: boolean
+}
+
+export async function getRepreAtendentes(): Promise<RepreAtendente[]> {
+    return await apiGet<RepreAtendente[]>("/usuario/repre-atendente")
+}
+
+export async function updateRepreAtendenteSenha(id: number, senha: string): Promise<RepreAtendente> {
+    return await apiPatch<RepreAtendente>(`/usuario/repre-atendente/${id}/senha`, { senha })
+}

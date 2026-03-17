@@ -11,6 +11,7 @@ export enum UserRole {
   BAGUA = "BAGUA",
   BSOLVENTE = "BSOLVENTE",
   REPRESENTANTE = "REPRESENTANTE",
+  REPRE_ATENDENTE = "REPRE_ATENDENTE",
 }
 
 export const UserRoleLabels: Record<UserRole, string> = {
@@ -19,6 +20,7 @@ export const UserRoleLabels: Record<UserRole, string> = {
   [UserRole.BAGUA]: "Base Água",
   [UserRole.BSOLVENTE]: "Base Solvente",
   [UserRole.REPRESENTANTE]: "Representante",
+  [UserRole.REPRE_ATENDENTE]: "Representante Comercial",
 }
 
 // ─── Usuário / Auth ──────────────────────────────────────────────────────────

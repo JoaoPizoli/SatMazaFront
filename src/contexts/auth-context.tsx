@@ -86,14 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated &&
       user!.tipo === UserRole.REPRESENTANTE &&
       !user!.password_changed
+    const isRepreAtendente = isAuthenticated && user!.tipo === UserRole.REPRE_ATENDENTE
 
     if (!isAuthenticated && !isLoginPage && !isCompleteRegistrationPage) {
       router.replace("/login")
     } else if (needsSetup && !isCompleteRegistrationPage) {
       // Representante com cadastro incompleto: redireciona independente de onde estiver
       router.replace("/complete-registration")
+    } else if (isRepreAtendente && pathname !== "/dashboard/admin") {
+      // REPRE_ATENDENTE só pode acessar indicadores
+      router.replace("/dashboard/admin")
     } else if (isAuthenticated && !needsSetup && isLoginPage) {
-      router.replace("/dashboard")
+      router.replace(isRepreAtendente ? "/dashboard/admin" : "/dashboard")
     }
   }, [user, isLoading, pathname, router])
 
