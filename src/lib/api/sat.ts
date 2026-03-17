@@ -58,6 +58,7 @@ export async function createSat(data: {
   cidade: string
   produtos: string
   quantidade: number
+  sem_lote?: boolean
   lotes: { lote: string; validade: string }[]
   contato: string
   representante_id: number
@@ -77,6 +78,7 @@ export async function updateSat(
     cidade: string
     produtos: string
     quantidade: number
+    sem_lote: boolean
     lotes: { lote: string; validade: string }[]
     contato: string
     representante_id: number

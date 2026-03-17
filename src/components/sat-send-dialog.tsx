@@ -60,6 +60,16 @@ import {
 } from "@/types"
 import { getViewUrl } from "@/lib/api/media"
 
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/** Formata validade para exibição: "yyyy-mm-dd" ou "yyyy-mm" → "MM/AAAA" */
+function formatValidade(validade: string): string {
+  if (!validade) return ""
+  const parts = validade.split("-")
+  if (parts.length >= 2) return `${parts[1]}/${parts[0]}`
+  return validade
+}
+
 // ─── Info row helper ─────────────────────────────────────────────────────────
 
 function InfoRow({
@@ -246,7 +256,7 @@ export function SatSendDialog({
                 <InfoRow
                   icon={FileText}
                   label="Lote(s)"
-                  value={sat.lotes.map(l => `${l.lote} (${new Date(l.validade).toLocaleDateString("pt-BR", { timeZone: 'UTC' })})`).join(", ")}
+                  value={sat.sem_lote ? "Sem lote" : sat.lotes.map(l => `${l.lote} (${formatValidade(l.validade)})`).join(", ")}
                 />
                 <InfoRow icon={User} label="Contato" value={sat.contato} />
                 <InfoRow icon={Phone} label="Telefone" value={sat.telefone} />

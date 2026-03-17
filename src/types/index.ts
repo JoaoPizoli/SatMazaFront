@@ -95,6 +95,7 @@ export type SAT = {
   cidade: string
   produtos: string
   quantidade: number
+  sem_lote: boolean
   lotes: SatLote[] // Agora é uma relação
   contato: string
   representante_id: string

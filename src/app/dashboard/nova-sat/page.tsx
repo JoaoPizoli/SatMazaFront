@@ -13,12 +13,13 @@ import { ApiError } from "@/lib/api"
 import type { ErpCliente, ErpRepresentante, ErpProduto } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { DateInput } from "@/components/ui/date-input"
+import { MonthYearInput } from "@/components/ui/month-year-input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Loader2,
   Plus,
@@ -55,6 +56,7 @@ export default function NovaSatPage() {
 
   // Refatorado para array de objetos { lote: string, validade: string }
   const [lotes, setLotes] = useState<{ lote: string; validade: string }[]>([{ lote: "", validade: "" }])
+  const [semLote, setSemLote] = useState(false)
 
   const [contato, setContato] = useState("")
   const [telefone, setTelefone] = useState("")
@@ -149,6 +151,16 @@ export default function NovaSatPage() {
     return /^\d{6}-\d{3}$/.test(lote)
   }
 
+  /** Formata validade para exibição: "yyyy-mm-dd" ou "yyyy-mm" → "MM/AAAA" */
+  function formatValidade(validade: string): string {
+    if (!validade) return ""
+    const parts = validade.split("-")
+    if (parts.length >= 2) {
+      return `${parts[1]}/${parts[0]}`
+    }
+    return validade
+  }
+
   // ── Manipulação de arquivos de evidência ──────────────────────────────────
 
   const handleFilesSelected = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,23 +203,25 @@ export default function NovaSatPage() {
       return
     }
 
-    const validLotes = lotes.filter((l) => l.lote.trim() !== "")
-    if (validLotes.length === 0) {
-      setError("Informe pelo menos um lote")
-      return
-    }
+    if (!semLote) {
+      const validLotes = lotes.filter((l) => l.lote.trim() !== "")
+      if (validLotes.length === 0) {
+        setError("Informe pelo menos um lote")
+        return
+      }
 
-    const invalidLotes = validLotes.filter((l) => !validateLoteFormat(l.lote))
-    if (invalidLotes.length > 0) {
-      setError(`Lotes com formato inválido (use 000000-000): ${invalidLotes.map(l => l.lote).join(", ")}`)
-      return
-    }
+      const invalidLotes = validLotes.filter((l) => !validateLoteFormat(l.lote))
+      if (invalidLotes.length > 0) {
+        setError(`Lotes com formato inválido (use 000000-000): ${invalidLotes.map(l => l.lote).join(", ")}`)
+        return
+      }
 
-    // Validar se todos têm validade
-    const missingValidade = validLotes.filter(l => !l.validade);
-    if (missingValidade.length > 0) {
-      setError(`Informe uma data de validade válida para ${missingValidade.length === 1 ? 'o lote' : 'os lotes'}: ${missingValidade.map(l => l.lote).join(", ")}`)
-      return
+      // Validar se todos têm validade
+      const missingValidade = validLotes.filter(l => !l.validade);
+      if (missingValidade.length > 0) {
+        setError(`Informe uma data de validade válida para ${missingValidade.length === 1 ? 'o lote' : 'os lotes'}: ${missingValidade.map(l => l.lote).join(", ")}`)
+        return
+      }
     }
 
     // Validação obrigatória de evidência
@@ -221,13 +235,14 @@ export default function NovaSatPage() {
     try {
       // 1. Criar a SAT
       setUploadProgress("Criando SAT...")
+      const validLotes = semLote ? [] : lotes.filter((l) => l.lote.trim() !== "")
       const sat = await createSat({
         cliente,
         cidade: cidade || "A definir",
         produtos,
         quantidade,
-        lotes: validLotes, // Agora passa os objetos {lote, validade}
-        // validade removida
+        sem_lote: semLote,
+        lotes: validLotes,
         contato,
         representante_id: user.id,
         telefone,
@@ -366,7 +381,7 @@ export default function NovaSatPage() {
 
             {/* Lotes e Validades dinâmicos */}
             <div className="space-y-2">
-              <Label>Lotes e Validades (Lote: 000000-000) <span className="text-destructive">*</span></Label>
+              <Label>Lotes e Validades (Lote: 000000-000) {!semLote && <span className="text-destructive">*</span>}</Label>
               <div className="space-y-3">
                 {lotes.map((item, index) => (
                   <div key={index} className="flex gap-2 items-start">
@@ -376,15 +391,15 @@ export default function NovaSatPage() {
                         onChange={(e) => handleLoteChange(index, 'lote', e.target.value)}
                         placeholder="Lote (000000-000)"
                         maxLength={10}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || semLote}
                       />
                     </div>
-                    <div className="w-44">
-                      <DateInput
+                    <div className="w-36">
+                      <MonthYearInput
                         value={item.validade}
                         onChange={(v) => handleLoteChange(index, 'validade', v)}
-                        disabled={isSubmitting}
-                        required
+                        disabled={isSubmitting || semLote}
+                        required={!semLote}
                       />
                     </div>
                     {lotes.length > 1 && (
@@ -393,7 +408,7 @@ export default function NovaSatPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => handleRemoveLote(index)}
-                        disabled={isSubmitting}
+                        disabled={isSubmitting || semLote}
                         className="mt-0"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -404,7 +419,7 @@ export default function NovaSatPage() {
               </div>
 
               {/* Badges de validação visual */}
-              {lotes.filter((l) => l.lote.trim() !== "").length > 0 && (
+              {!semLote && lotes.filter((l) => l.lote.trim() !== "").length > 0 && (
                 <div className="flex flex-wrap gap-2 mt-2">
                   {lotes
                     .filter((l) => l.lote.trim() !== "")
@@ -414,23 +429,43 @@ export default function NovaSatPage() {
                         variant={validateLoteFormat(item.lote) ? "secondary" : "destructive"}
                         className="text-sm px-3 py-1"
                       >
-                        {item.lote} {item.validade ? `(${new Date(item.validade).toLocaleDateString('pt-BR', { timeZone: 'UTC' })})` : ''}
+                        {item.lote} {item.validade ? `(${formatValidade(item.validade)})` : ''}
                       </Badge>
                     ))}
                 </div>
               )}
 
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddLote}
-                disabled={isSubmitting}
-                className="mt-2"
-              >
-                <Plus className="mr-1 h-4 w-4" />
-                Adicionar Lote
-              </Button>
+              {!semLote && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={handleAddLote}
+                  disabled={isSubmitting}
+                  className="mt-2"
+                >
+                  <Plus className="mr-1 h-4 w-4" />
+                  Adicionar Lote
+                </Button>
+              )}
+
+              {/* Checkbox Não possui lote */}
+              <div className="flex items-center space-x-2 mt-3">
+                <Checkbox
+                  id="sem-lote"
+                  checked={semLote}
+                  onCheckedChange={(checked) => {
+                    setSemLote(checked === true)
+                    if (checked) {
+                      setLotes([{ lote: "", validade: "" }])
+                    }
+                  }}
+                  disabled={isSubmitting}
+                />
+                <Label htmlFor="sem-lote" className="text-sm font-normal cursor-pointer">
+                  Não possui lote?
+                </Label>
+              </div>
             </div>
 
             <Separator />
