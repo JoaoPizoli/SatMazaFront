@@ -33,7 +33,9 @@ export default function HistoricoFinalizadasPage() {
   const allFinalizadas = useMemo(() => {
     let sats = allSats
 
-    if (user?.tipo === UserRole.BAGUA) {
+    if (user?.tipo === UserRole.REPRESENTANTE) {
+      sats = sats.filter((s) => s.representante_id === user.id)
+    } else if (user?.tipo === UserRole.BAGUA) {
       sats = sats.filter((s) => s.destino === SATDestino.BASE_AGUA)
     } else if (user?.tipo === UserRole.BSOLVENTE) {
       sats = sats.filter((s) => s.destino === SATDestino.BASE_SOLVENTE)
@@ -44,7 +46,7 @@ export default function HistoricoFinalizadasPage() {
         new Date(b.updatedAt).getTime() -
         new Date(a.updatedAt).getTime()
     )
-  }, [allSats, user?.tipo])
+  }, [allSats, user?.tipo, user?.id])
 
   const satsFiltered = useMemo(() => {
     let filtered = allFinalizadas
