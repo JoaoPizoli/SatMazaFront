@@ -68,6 +68,7 @@ import {
   validateFile,
   AVT_LAUDO_ACCEPT,
 } from "@/lib/api/media"
+import { downloadSatPdf } from "@/lib/api/sat"
 
 // ─── Tipos do Dialog ─────────────────────────────────────────────────────────
 
@@ -355,6 +356,7 @@ export function SatDetailDialog({
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [redirectConfirmOpen, setRedirectConfirmOpen] = useState(false)
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
 
   // Reset form when dialog opens with different SAT/AVT
   const resetForm = useCallback(() => {
@@ -917,7 +919,30 @@ export function SatDetailDialog({
           )}
 
           {mode === "visualizar" && (
-            <div className="flex justify-end pt-2">
+            <div className="flex justify-end gap-2 pt-2">
+              {sat.avt && (
+                <Button
+                  variant="secondary"
+                  disabled={isDownloadingPdf}
+                  onClick={async () => {
+                    try {
+                      setIsDownloadingPdf(true)
+                      await downloadSatPdf(sat.id, sat.codigo)
+                    } catch {
+                      // silently fail
+                    } finally {
+                      setIsDownloadingPdf(false)
+                    }
+                  }}
+                >
+                  {isDownloadingPdf ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Baixar PDF
+                </Button>
+              )}
               <Button variant="outline" onClick={() => onOpenChange(false)}>
                 Fechar
               </Button>

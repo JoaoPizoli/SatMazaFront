@@ -184,3 +184,30 @@ export async function getProcedenteByLab(
   const query = buildFilterQuery(filter)
   return apiGet<ProcedenteByLabData[]>(`/sat/dashboard/procedente-by-lab?${query}`)
 }
+
+/**
+ * Baixar PDF do relatório AVT de uma SAT finalizada.
+ */
+export async function downloadSatPdf(satId: string, codigo: string): Promise<void> {
+  const { getStoredToken } = await import("@/lib/api")
+  const token = getStoredToken()
+  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3040"
+
+  const res = await fetch(`${API_URL}/sat/${satId}/pdf`, {
+    headers: { Authorization: `Bearer ${token}` },
+  })
+
+  if (!res.ok) {
+    throw new Error("Erro ao gerar PDF do relatório.")
+  }
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = `${codigo}_AVT.pdf`
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
+}
