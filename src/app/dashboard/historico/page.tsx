@@ -34,7 +34,7 @@ export default function HistoricoFinalizadasPage() {
     let sats = allSats
 
     if (user?.tipo === UserRole.REPRESENTANTE) {
-      sats = sats.filter((s) => s.representante_id === user.id)
+      sats = sats.filter((s) => Number(s.representante_id) === user.id)
     } else if (user?.tipo === UserRole.BAGUA) {
       sats = sats.filter((s) => s.destino === SATDestino.BASE_AGUA)
     } else if (user?.tipo === UserRole.BSOLVENTE) {
