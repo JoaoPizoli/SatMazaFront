@@ -17,8 +17,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "SatMaza",
-    template: "%s | SatMaza",
+    default: "SAT | Maza",
+    template: "%s | SAT Maza",
   },
   description: "Sistema de Solicitação de Assistência Técnica",
   keywords: ["SAT", "Assistência Técnica", "SatMaza"],
