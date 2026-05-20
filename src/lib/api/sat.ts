@@ -11,12 +11,40 @@ interface PaginatedResponse<T> {
   }
 }
 
+// Limite máximo aceito pelo backend (PaginationDto @Max(100))
+const PAGE_LIMIT = 100
+// Trava de segurança contra loop infinito (100 páginas * 100 = 10.000 SATs)
+const MAX_PAGES = 100
+
 /**
- * Buscar todas as SATs.
+ * Busca TODAS as páginas de um endpoint paginado de SATs e concatena o resultado.
+ * Necessário porque os endpoints retornam no máximo 100 registros por página;
+ * as telas (dashboards e listagens) precisam do conjunto completo para
+ * calcular totais e filtrar/buscar no cliente.
+ */
+async function fetchAllPages(basePath: string): Promise<SAT[]> {
+  const all: SAT[] = []
+  let page = 1
+  let totalPages = 1
+
+  do {
+    const sep = basePath.includes("?") ? "&" : "?"
+    const res = await apiGet<PaginatedResponse<SAT>>(
+      `${basePath}${sep}page=${page}&limit=${PAGE_LIMIT}`,
+    )
+    all.push(...res.data)
+    totalPages = res.meta?.totalPages ?? 1
+    page++
+  } while (page <= totalPages && page <= MAX_PAGES)
+
+  return all
+}
+
+/**
+ * Buscar todas as SATs (todas as páginas).
  */
 export async function getAllSats(): Promise<SAT[]> {
-  const res = await apiGet<PaginatedResponse<SAT>>("/sat")
-  return res.data
+  return fetchAllPages("/sat")
 }
 
 /**
@@ -30,24 +58,21 @@ export async function getSatById(id: string): Promise<SAT> {
  * Buscar SATs por status.
  */
 export async function getSatsByStatus(status: SATStatus): Promise<SAT[]> {
-  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/status/${status}`)
-  return res.data
+  return fetchAllPages(`/sat/status/${status}`)
 }
 
 /**
  * Buscar SATs por laboratório de destino.
  */
 export async function getSatsByLab(laboratorio: SATDestino): Promise<SAT[]> {
-  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/laboratorio/${laboratorio}`)
-  return res.data
+  return fetchAllPages(`/sat/laboratorio/${laboratorio}`)
 }
 
 /**
  * Buscar SATs de um representante específico.
  */
 export async function getSatsByRepresentante(representanteId: number): Promise<SAT[]> {
-  const res = await apiGet<PaginatedResponse<SAT>>(`/sat/representante/${representanteId}`)
-  return res.data
+  return fetchAllPages(`/sat/representante/${representanteId}`)
 }
 
 /**
