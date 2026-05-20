@@ -8,6 +8,7 @@ export const MAX_FILE_SIZE = 50 * 1024 * 1024 // 50 MB
 export const ALLOWED_SAT_EVIDENCE_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp', 'image/svg+xml',
   'video/mp4', 'video/webm', 'video/quicktime', 'video/x-msvideo', 'video/x-ms-wmv', 'video/mpeg', 'video/3gpp',
+  'audio/mpeg', 'audio/mp4', 'audio/aac', 'audio/ogg', 'audio/wav', 'audio/x-wav', 'audio/webm', 'audio/3gpp', 'audio/amr', 'audio/flac',
 ]
 
 export const ALLOWED_AVT_LAUDO_TYPES = [
@@ -17,7 +18,7 @@ export const ALLOWED_AVT_LAUDO_TYPES = [
   'image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/bmp',
 ]
 
-export const SAT_EVIDENCE_ACCEPT = "image/*,video/*"
+export const SAT_EVIDENCE_ACCEPT = "image/*,video/*,audio/*"
 export const AVT_LAUDO_ACCEPT = ".pdf,.doc,.docx,.txt,.jpg,.jpeg,.png,.gif,.webp,.bmp"
 
 // ── API calls ────────────────────────────────────────────────────────────────
@@ -133,7 +134,7 @@ export function validateFile(
 
   if (!allowedTypes.includes(file.type)) {
     const tipos = context === 'sat_evidencia'
-      ? 'imagens e vídeos'
+      ? 'imagens, vídeos e áudios'
       : 'PDF, Word, TXT ou imagens'
     return `O arquivo "${file.name}" não é um tipo permitido. Aceitos: ${tipos}.`
   }

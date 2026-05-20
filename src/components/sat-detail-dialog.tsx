@@ -15,6 +15,7 @@ import {
   Trash2,
   ImageIcon,
   Video,
+  FileAudio,
   FileIcon,
   Paperclip,
   Download,
@@ -199,6 +200,7 @@ function EvidenciasGallery({ evidencias }: { evidencias: SAT["evidencias"] }) {
         {readyEvidencias.map((ev) => {
           const isImage = ev.mimeType.startsWith("image/")
           const isVideo = ev.mimeType.startsWith("video/")
+          const isAudio = ev.mimeType.startsWith("audio/")
           const fileName =
             ev.originalName ?? ev.blobName.split("/").pop() ?? "arquivo"
           const isLoading = loadingId === ev.id
@@ -224,7 +226,8 @@ function EvidenciasGallery({ evidencias }: { evidencias: SAT["evidencias"] }) {
                 <div className="flex flex-col items-center justify-center gap-1">
                   {isImage && <ImageIcon className="h-8 w-8 text-blue-500" />}
                   {isVideo && <Video className="h-8 w-8 text-purple-500" />}
-                  {!isImage && !isVideo && (
+                  {isAudio && <FileAudio className="h-8 w-8 text-green-600" />}
+                  {!isImage && !isVideo && !isAudio && (
                     <FileIcon className="h-8 w-8 text-muted-foreground" />
                   )}
                   <span className="text-[10px] text-muted-foreground uppercase font-medium">

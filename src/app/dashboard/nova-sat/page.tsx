@@ -27,6 +27,7 @@ import {
   FileText,
   ImageIcon,
   Video,
+  FileAudio,
   Upload,
   X,
   AlertTriangle,
@@ -226,7 +227,7 @@ export default function NovaSatPage() {
 
     // Validação obrigatória de evidência
     if (selectedFiles.length === 0) {
-      setError("Anexe pelo menos uma imagem ou vídeo como evidência.")
+      setError("Anexe pelo menos uma imagem, vídeo ou áudio como evidência.")
       return
     }
 
@@ -522,7 +523,7 @@ export default function NovaSatPage() {
                   Evidências <span className="text-destructive">*</span>
                 </Label>
                 <span className="text-xs text-muted-foreground">
-                  Imagens e/ou vídeos (máx. 50 MB cada)
+                  Imagens, vídeos e/ou áudios (máx. 50 MB cada)
                 </span>
               </div>
 
@@ -532,6 +533,7 @@ export default function NovaSatPage() {
                   {selectedFiles.map((file, idx) => {
                     const isImage = file.type.startsWith("image/")
                     const isVideo = file.type.startsWith("video/")
+                    const isAudio = file.type.startsWith("audio/")
                     return (
                       <div
                         key={`${file.name}-${idx}`}
@@ -557,6 +559,8 @@ export default function NovaSatPage() {
                             <div className="flex flex-col items-center justify-center gap-1">
                               {isVideo ? (
                                 <Video className="h-8 w-8 text-purple-500" />
+                              ) : isAudio ? (
+                                <FileAudio className="h-8 w-8 text-green-600" />
                               ) : (
                                 <ImageIcon className="h-8 w-8 text-blue-500" />
                               )}
@@ -598,7 +602,7 @@ export default function NovaSatPage() {
                 />
                 {selectedFiles.length === 0 && (
                   <p className="text-xs text-muted-foreground">
-                    Obrigatório: anexe pelo menos uma imagem ou vídeo.
+                    Obrigatório: anexe pelo menos uma imagem, vídeo ou áudio.
                   </p>
                 )}
                 {selectedFiles.length > 0 && (
