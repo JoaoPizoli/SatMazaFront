@@ -73,7 +73,6 @@ export default function RecebidasPage() {
           solucao: avtData.solucao,
           data: avtData.data,
           status: AVTStatus.EM_ANALISE,
-          media_id: null,
         })
         await changeStatusSat(satId, SATStatus.EM_ANALISE)
         refetch()

@@ -150,8 +150,6 @@ export type AVT = {
   sat_id: string
   averigucao_tecnica: string
   possiveis_causas: string
-  media_id: string | null
-  laudo?: MediaAttachment
   lote: string
   reclamacao_procedente: boolean
   troca: boolean
@@ -165,7 +163,6 @@ export type AVT = {
 
 /** DTO para criação de AVT */
 export type CreateAvtDto = {
-  media_id: string | null
   averigucao_tecnica: string
   possiveis_causas: string
   lote: string

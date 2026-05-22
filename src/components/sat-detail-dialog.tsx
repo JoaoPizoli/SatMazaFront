@@ -66,6 +66,7 @@ import {
 import {
   getViewUrl,
   uploadMedia,
+  deleteMedia,
   validateFile,
   AVT_LAUDO_ACCEPT,
 } from "@/lib/api/media"
@@ -104,8 +105,6 @@ export interface AVTFormData {
   solucao: string
   data: string
   status: AVTStatus
-  laudoFile?: File | null
-  media_id?: string | null
 }
 
 // ─── Estado inicial do formulário ────────────────────────────────────────────
@@ -122,8 +121,6 @@ function getInitialFormData(avt?: AVT | null, sat?: SAT | null): AVTFormData {
       solucao: avt.solucao,
       data: avt.data.split("T")[0],
       status: avt.status,
-      laudoFile: null,
-      media_id: avt.media_id ?? null,
     }
   }
   return {
@@ -136,8 +133,6 @@ function getInitialFormData(avt?: AVT | null, sat?: SAT | null): AVTFormData {
     solucao: "",
     data: new Date().toISOString().split("T")[0],
     status: AVTStatus.EM_ANALISE,
-    laudoFile: null,
-    media_id: null,
   }
 }
 
@@ -352,26 +347,43 @@ export function SatDetailDialog({
   const [formData, setFormData] = useState<AVTFormData>(() =>
     getInitialFormData(avt, sat)
   )
-  const [laudoFileName, setLaudoFileName] = useState<string>(
-    avt?.laudo?.originalName ?? ""
-  )
+  // Novos arquivos selecionados localmente (ainda não enviados)
+  const [newLaudoFiles, setNewLaudoFiles] = useState<File[]>([])
+  // IDs de laudos já salvos que foram marcados para remoção
+  const [removedLaudoIds, setRemovedLaudoIds] = useState<string[]>([])
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [isUploading, setIsUploading] = useState(false)
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [redirectConfirmOpen, setRedirectConfirmOpen] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
 
+  // Laudos já salvos no backend (todas as mídias da SAT com context avt_laudo)
+  const savedLaudos = useMemo(
+    () =>
+      (sat?.evidencias ?? []).filter(
+        (m) => m.status === MediaStatus.READY && m.context === "avt_laudo"
+      ),
+    [sat]
+  )
+  // Laudos salvos que ainda não foram removidos nesta edição
+  const visibleSavedLaudos = useMemo(
+    () => savedLaudos.filter((l) => !removedLaudoIds.includes(l.id)),
+    [savedLaudos, removedLaudoIds]
+  )
+
   // Reset form when dialog opens with different SAT/AVT
   const resetForm = useCallback(() => {
     setFormData(getInitialFormData(avt, sat))
-    setLaudoFileName(avt?.laudo?.originalName ?? "")
+    setNewLaudoFiles([])
+    setRemovedLaudoIds([])
     setUploadError(null)
   }, [avt, sat])
 
   // Sync form data when avt/sat props change (component stays mounted)
   useEffect(() => {
     setFormData(getInitialFormData(avt, sat))
-    setLaudoFileName(avt?.laudo?.originalName ?? "")
+    setNewLaudoFiles([])
+    setRemovedLaudoIds([])
     setUploadError(null)
   }, [avt, sat])
 
@@ -395,51 +407,55 @@ export function SatDetailDialog({
 
   const handleFileChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      const file = e.target.files?.[0] ?? null
+      const files = Array.from(e.target.files ?? [])
       setUploadError(null)
 
-      if (file) {
+      const valid: File[] = []
+      for (const file of files) {
         const validationError = validateFile(file, 'avt_laudo')
         if (validationError) {
           setUploadError(validationError)
-          e.target.value = ""
-          return
+          continue
         }
+        valid.push(file)
       }
 
-      updateField("laudoFile", file)
-      setLaudoFileName(file?.name ?? "")
+      if (valid.length > 0) {
+        setNewLaudoFiles((prev) => [...prev, ...valid])
+      }
+      // Permite re-selecionar o mesmo arquivo posteriormente
+      e.target.value = ""
     },
-    [updateField]
+    []
   )
 
-  // Verifica se o laudo é obrigatório e está presente
-  const hasLaudo = useMemo(() => {
-    // Já tem laudo salvo anteriormente
-    if (formData.media_id && !formData.laudoFile) return true
-    // Selecionou novo arquivo
-    if (formData.laudoFile) return true
-    return false
-  }, [formData.media_id, formData.laudoFile])
+  const removeSavedLaudo = useCallback((id: string) => {
+    setRemovedLaudoIds((prev) => (prev.includes(id) ? prev : [...prev, id]))
+  }, [])
 
-  // Upload do laudo e retorna o media_id
-  async function uploadLaudoIfNeeded(): Promise<string | null> {
-    if (!formData.laudoFile || !sat) {
-      return formData.media_id ?? null
-    }
+  const removeNewLaudo = useCallback((index: number) => {
+    setNewLaudoFiles((prev) => prev.filter((_, i) => i !== index))
+  }, [])
 
+  // Persiste os laudos: remove os marcados e envia os novos arquivos.
+  const persistLaudos = useCallback(async (): Promise<void> => {
+    if (!sat) return
     setIsUploading(true)
     try {
-      const media = await uploadMedia(formData.laudoFile, sat.id, 'avt_laudo')
-      return media.id
+      for (const id of removedLaudoIds) {
+        await deleteMedia(id)
+      }
+      for (const file of newLaudoFiles) {
+        await uploadMedia(file, sat.id, 'avt_laudo')
+      }
     } catch (err) {
-      const msg = err instanceof Error ? err.message : "Erro ao fazer upload do laudo."
+      const msg = err instanceof Error ? err.message : "Erro ao salvar os laudos."
       setUploadError(msg)
       throw err
     } finally {
       setIsUploading(false)
     }
-  }
+  }, [sat, removedLaudoIds, newLaudoFiles])
 
   const validateAvtFields = useCallback(() => {
     const errors: string[] = []
@@ -460,31 +476,26 @@ export function SatDetailDialog({
     setUploadError(null)
 
     try {
-      const mediaId = await uploadLaudoIfNeeded()
-      const saveData = { ...formData, media_id: mediaId }
-      // Remover laudoFile do payload antes de enviar
-      const { laudoFile, ...avtPayload } = saveData
-      onSave?.(avtPayload as AVTFormData)
+      await persistLaudos()
+      onSave?.(formData)
       onOpenChange(false)
     } catch {
       // uploadError já foi setado
     }
-  }, [formData, sat, onSave, onOpenChange, uploadLaudoIfNeeded])
+  }, [formData, sat, onSave, onOpenChange, persistLaudos])
 
   const handleChangeStatus = useCallback(async () => {
     if (!sat) return
     setUploadError(null)
 
     try {
-      const mediaId = await uploadLaudoIfNeeded()
-      const saveData = { ...formData, media_id: mediaId }
-      const { laudoFile, ...avtPayload } = saveData
-      onChangeStatus?.(sat.id, avtPayload as AVTFormData)
+      await persistLaudos()
+      onChangeStatus?.(sat.id, formData)
       onOpenChange(false)
     } catch {
       // uploadError já foi setado
     }
-  }, [sat, formData, onChangeStatus, onOpenChange])
+  }, [sat, formData, onChangeStatus, onOpenChange, persistLaudos])
 
   const handleFinalizarClick = useCallback(() => {
     // Verificar campos obrigatórios
@@ -500,15 +511,13 @@ export function SatDetailDialog({
     if (!sat) return
 
     try {
-      const mediaId = await uploadLaudoIfNeeded()
-      const finalData = { ...formData, status: AVTStatus.CONCLUIDO, media_id: mediaId }
-      const { laudoFile, ...avtPayload } = finalData
-      onChangeStatus?.(sat.id, avtPayload as AVTFormData)
+      await persistLaudos()
+      onChangeStatus?.(sat.id, { ...formData, status: AVTStatus.CONCLUIDO })
       onOpenChange(false)
     } catch {
       // uploadError já foi setado
     }
-  }, [formData, sat, onChangeStatus, onOpenChange])
+  }, [formData, sat, onChangeStatus, onOpenChange, persistLaudos])
 
   const lotesOptions = useMemo(() => sat?.lotes ?? [], [sat])
 
@@ -574,21 +583,25 @@ export function SatDetailDialog({
               </div>
               <EvidenciasGallery evidencias={sat.evidencias} />
 
-              {/* Exibir Laudo da AVT se existir (Visível para todos, inclusive Representante na Finalizada) */}
-              {sat.avt?.laudo && (
+              {/* Exibir Laudos da AVT se existirem (modo visualização, inclusive Representante na Finalizada) */}
+              {readOnly && savedLaudos.length > 0 && (
                 <div className="mt-5 border-t pt-4">
                   <div className="flex items-center gap-2 mb-3">
                     <FileText className="h-4 w-4 text-primary" />
                     <p className="text-sm font-medium text-foreground">
-                      Laudo Técnico (AVT)
+                      Laudos Técnicos (AVT) ({savedLaudos.length})
                     </p>
+                    {sat.avt && (
+                      <span className="text-[10px] text-muted-foreground ml-auto">
+                        {AVTStatusLabels[sat.avt.status]} ·{" "}
+                        {new Date(sat.avt.data).toLocaleDateString("pt-BR")}
+                      </span>
+                    )}
                   </div>
-                  <div className="flex items-center gap-4">
-                    <LaudoCard laudo={sat.avt.laudo} readOnly />
-                    <div className="flex flex-col">
-                      <span className="text-xs font-medium">Status: {AVTStatusLabels[sat.avt.status]}</span>
-                      <span className="text-[10px] text-muted-foreground">{new Date(sat.avt.data).toLocaleDateString("pt-BR")}</span>
-                    </div>
+                  <div className="flex flex-col gap-2">
+                    {savedLaudos.map((laudo) => (
+                      <LaudoCard key={laudo.id} laudo={laudo} readOnly />
+                    ))}
                   </div>
                 </div>
               )}
@@ -778,73 +791,66 @@ export function SatDetailDialog({
                     </div>
                   )}
 
-                  {/* Upload de Laudo */}
-                  <div className="space-y-2">
-                    <Label>
-                      Laudo / Relatório
-                    </Label>
+                  {/* Upload de Laudos — apenas no modo edição.
+                      Em visualização, os laudos aparecem no card "Dados da SAT". */}
+                  {!readOnly && (
+                    <div className="space-y-2">
+                      <Label>
+                        Laudos / Relatórios
+                      </Label>
 
-                    {/* Visualização de Laudo Já Existente no Backend */}
-                    {readOnly ? (
-                      avt?.laudo ? (
-                        <LaudoCard laudo={avt.laudo} readOnly />
-                      ) : (
-                        <p className="text-sm text-muted-foreground italic">
-                          Nenhum laudo anexado.
-                        </p>
-                      )
-                    ) : (
                       <div className="space-y-3">
-                        {/* Se já existe um laudo salvo ou selecionado */}
-                        {((avt?.laudo && formData.media_id) || formData.laudoFile) && (
+                        {(visibleSavedLaudos.length > 0 || newLaudoFiles.length > 0) && (
                           <div className="flex flex-col gap-2">
-                            {/* Laudo salvo no banco */}
-                            {avt?.laudo && formData.media_id && !formData.laudoFile && (
+                            {/* Laudos já salvos no banco */}
+                            {visibleSavedLaudos.map((laudo) => (
                               <LaudoCard
-                                laudo={avt.laudo}
-                                onRemove={() => {
-                                  updateField("media_id", null)
-                                  setLaudoFileName("")
-                                }}
+                                key={laudo.id}
+                                laudo={laudo}
+                                onRemove={() => removeSavedLaudo(laudo.id)}
                               />
-                            )}
+                            ))}
 
-                            {/* Arquivo local selecionado (preview simples) */}
-                            {formData.laudoFile && (
-                              <div className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3">
+                            {/* Novos arquivos selecionados (preview, ainda não enviados) */}
+                            {newLaudoFiles.map((file, index) => (
+                              <div
+                                key={`${file.name}-${index}`}
+                                className="flex items-center gap-3 rounded-lg border bg-muted/50 p-3"
+                              >
                                 <FileText className="h-8 w-8 text-muted-foreground" />
                                 <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium truncate">{formData.laudoFile.name}</p>
-                                  <p className="text-xs text-muted-foreground">Novo arquivo selecionado</p>
+                                  <p className="text-sm font-medium truncate">{file.name}</p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Novo arquivo · {(file.size / 1024 / 1024).toFixed(2)} MB
+                                  </p>
                                 </div>
                                 <Button
                                   variant="ghost"
                                   size="icon"
                                   className="h-8 w-8 text-muted-foreground hover:text-destructive"
-                                  onClick={() => {
-                                    updateField("laudoFile", null)
-                                    setLaudoFileName("")
-                                  }}
+                                  onClick={() => removeNewLaudo(index)}
+                                  disabled={isUploading}
                                 >
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            )}
+                            ))}
                           </div>
                         )}
 
-                        {/* Botão de Upload (Sempre visível para permitir substituição) */}
+                        {/* Botão para adicionar mais arquivos */}
                         <div className="flex items-center gap-3">
                           <label
                             htmlFor="avt-laudo"
                             className={`flex items-center gap-2 px-4 py-2 border border-dashed rounded-md cursor-pointer hover:bg-muted/50 transition-colors text-sm w-full justify-center ${isUploading ? 'opacity-50 pointer-events-none' : ''}`}
                           >
                             <Upload className="h-4 w-4" />
-                            {formData.laudoFile ? "Substituir arquivo" : (avt?.laudo && formData.media_id ? "Substituir laudo existente" : "Selecionar arquivo do laudo")}
+                            Adicionar arquivo(s)
                           </label>
                           <Input
                             id="avt-laudo"
                             type="file"
+                            multiple
                             className="hidden"
                             accept={AVT_LAUDO_ACCEPT}
                             onChange={handleFileChange}
@@ -853,11 +859,11 @@ export function SatDetailDialog({
                         </div>
 
                         <p className="text-xs text-muted-foreground">
-                          Formatos aceitos: PDF, Word (.doc, .docx), Texto (.txt) ou Imagem. Máx. 50 MB.
+                          Anexe quantos laudos quiser. Formatos aceitos: PDF, Word (.doc, .docx), Texto (.txt) ou Imagem. Máx. 50 MB por arquivo.
                         </p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  )}
 
                   {/* Erro de upload */}
                   {uploadError && (

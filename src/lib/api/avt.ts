@@ -7,7 +7,6 @@ import type { AVT, AVTStatus } from "@/types"
 export async function createAvt(
   satId: string,
   data: {
-    media_id: string | null
     averigucao_tecnica: string
     possiveis_causas: string
     lote: string
@@ -28,7 +27,6 @@ export async function createAvt(
 export async function updateAvt(
   avtId: string,
   data: Partial<{
-    media_id: string | null
     averigucao_tecnica: string
     possiveis_causas: string
     lote: string
