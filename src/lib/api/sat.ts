@@ -211,28 +211,44 @@ export async function getProcedenteByLab(
 }
 
 /**
- * Baixar PDF do relatório AVT de uma SAT finalizada.
+ * Helper interno: baixa um PDF autenticado de um endpoint da API e dispara
+ * o download no navegador com o nome de arquivo informado.
  */
-export async function downloadSatPdf(satId: string, codigo: string): Promise<void> {
+async function downloadPdfFromApi(path: string, filename: string): Promise<void> {
   const { getStoredToken } = await import("@/lib/api")
   const token = getStoredToken()
   const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3040"
 
-  const res = await fetch(`${API_URL}/sat/${satId}/pdf`, {
+  const res = await fetch(`${API_URL}${path}`, {
     headers: { Authorization: `Bearer ${token}` },
   })
 
   if (!res.ok) {
-    throw new Error("Erro ao gerar PDF do relatório.")
+    throw new Error("Erro ao gerar PDF.")
   }
 
   const blob = await res.blob()
   const url = URL.createObjectURL(blob)
   const a = document.createElement("a")
   a.href = url
-  a.download = `${codigo}_AVT.pdf`
+  a.download = filename
   document.body.appendChild(a)
   a.click()
   a.remove()
   URL.revokeObjectURL(url)
+}
+
+/**
+ * Baixar PDF do relatório AVT de uma SAT finalizada.
+ */
+export async function downloadSatPdf(satId: string, codigo: string): Promise<void> {
+  return downloadPdfFromApi(`/sat/${satId}/pdf`, `${codigo}_AVT.pdf`)
+}
+
+/**
+ * Baixar PDF de comprovante de abertura da SAT (disponível em qualquer status).
+ * Contém apenas os dados de abertura, para o representante enviar ao cliente.
+ */
+export async function downloadSatAberturaPdf(satId: string, codigo: string): Promise<void> {
+  return downloadPdfFromApi(`/sat/${satId}/pdf-abertura`, `${codigo}_Comprovante_Abertura.pdf`)
 }

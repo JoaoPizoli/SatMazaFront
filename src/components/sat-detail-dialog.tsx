@@ -70,7 +70,7 @@ import {
   validateFile,
   AVT_LAUDO_ACCEPT,
 } from "@/lib/api/media"
-import { downloadSatPdf } from "@/lib/api/sat"
+import { downloadSatPdf, downloadSatAberturaPdf } from "@/lib/api/sat"
 
 // ─── Tipos do Dialog ─────────────────────────────────────────────────────────
 
@@ -356,6 +356,7 @@ export function SatDetailDialog({
   const [uploadError, setUploadError] = useState<string | null>(null)
   const [redirectConfirmOpen, setRedirectConfirmOpen] = useState(false)
   const [isDownloadingPdf, setIsDownloadingPdf] = useState(false)
+  const [isDownloadingAbertura, setIsDownloadingAbertura] = useState(false)
 
   // Laudos já salvos no backend (todas as mídias da SAT com context avt_laudo)
   const savedLaudos = useMemo(
@@ -928,7 +929,28 @@ export function SatDetailDialog({
           )}
 
           {mode === "visualizar" && (
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
+              <Button
+                variant="secondary"
+                disabled={isDownloadingAbertura}
+                onClick={async () => {
+                  try {
+                    setIsDownloadingAbertura(true)
+                    await downloadSatAberturaPdf(sat.id, sat.codigo)
+                  } catch {
+                    // silently fail
+                  } finally {
+                    setIsDownloadingAbertura(false)
+                  }
+                }}
+              >
+                {isDownloadingAbertura ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Download className="mr-2 h-4 w-4" />
+                )}
+                Comprovante de Abertura
+              </Button>
               {sat.avt && (
                 <Button
                   variant="secondary"
