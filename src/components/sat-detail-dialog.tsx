@@ -59,6 +59,7 @@ import {
   type MediaAttachment,
   AVTStatus,
   AVTStatusLabels,
+  SATStatus,
   SATStatusLabels,
   SATDestinoLabels,
   MediaStatus,
@@ -930,28 +931,30 @@ export function SatDetailDialog({
 
           {mode === "visualizar" && (
             <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
-              <Button
-                variant="secondary"
-                disabled={isDownloadingAbertura}
-                onClick={async () => {
-                  try {
-                    setIsDownloadingAbertura(true)
-                    await downloadSatAberturaPdf(sat.id, sat.codigo)
-                  } catch {
-                    // silently fail
-                  } finally {
-                    setIsDownloadingAbertura(false)
-                  }
-                }}
-              >
-                {isDownloadingAbertura ? (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                ) : (
-                  <Download className="mr-2 h-4 w-4" />
-                )}
-                Comprovante de Abertura
-              </Button>
-              {sat.avt && (
+              {sat.status !== SATStatus.FINALIZADA && (
+                <Button
+                  variant="secondary"
+                  disabled={isDownloadingAbertura}
+                  onClick={async () => {
+                    try {
+                      setIsDownloadingAbertura(true)
+                      await downloadSatAberturaPdf(sat.id, sat.codigo)
+                    } catch {
+                      // silently fail
+                    } finally {
+                      setIsDownloadingAbertura(false)
+                    }
+                  }}
+                >
+                  {isDownloadingAbertura ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Download className="mr-2 h-4 w-4" />
+                  )}
+                  Comprovante de Abertura
+                </Button>
+              )}
+              {sat.status === SATStatus.FINALIZADA && sat.avt && (
                 <Button
                   variant="secondary"
                   disabled={isDownloadingPdf}
