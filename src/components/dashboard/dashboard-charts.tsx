@@ -23,16 +23,12 @@ import {
 } from "recharts"
 
 const COLORS = [
-    "#3b82f6", // Blue 500
-    "#10b981", // Emerald 500
-    "#f59e0b", // Amber 500
-    "#ef4444", // Red 500
-    "#8b5cf6", // Violet 500
-    "#ec4899", // Pink 500
-    "#06b6d4", // Cyan 500
+    "var(--chart-1)",
+    "var(--chart-2)",
+    "var(--chart-3)",
+    "var(--chart-4)",
+    "var(--chart-5)",
 ]
-
-const BAR_COLORS = ["#3b82f6", "#10b981", "#8b5cf6", "#f59e0b", "#ef4444"]
 
 const PROCEDENTE_COLORS: Record<string, string> = {
     Procedente: "#10b981",
@@ -42,12 +38,13 @@ const PROCEDENTE_COLORS: Record<string, string> = {
 
 const tooltipStyle = {
     contentStyle: {
-        backgroundColor: "hsl(var(--card))",
-        borderColor: "hsl(var(--border))",
+        backgroundColor: "var(--card)",
+        borderColor: "var(--border)",
         borderRadius: "8px",
         boxShadow: "0 4px 6px -1px rgb(0 0 0 / 0.1)",
     },
-    itemStyle: { color: "hsl(var(--foreground))" },
+    itemStyle: { color: "var(--foreground)" },
+    labelStyle: { color: "var(--foreground)" },
 }
 
 function EmptyState() {
@@ -60,6 +57,35 @@ function EmptyState() {
 
 interface ChartProps {
     data: DashboardChartData[]
+}
+
+const MAX_TICK_CHARS = 26
+
+function TruncatedYAxisTick({
+    x,
+    y,
+    payload,
+}: {
+    x?: number
+    y?: number
+    payload?: { value: string }
+}) {
+    const value = payload?.value ?? ""
+    const display =
+        value.length > MAX_TICK_CHARS ? `${value.slice(0, MAX_TICK_CHARS - 1)}…` : value
+    return (
+        <text
+            x={x}
+            y={y}
+            dy={4}
+            textAnchor="end"
+            fontSize={12}
+            fill="var(--muted-foreground)"
+        >
+            <title>{value}</title>
+            {display}
+        </text>
+    )
 }
 
 export function SatsBySectorChart({ data }: ChartProps) {
@@ -106,6 +132,8 @@ export function SatsBySectorChart({ data }: ChartProps) {
 
 export function SatsByRepresentativeChart({ data }: ChartProps) {
     const chartData = data.slice(0, 10)
+    // 40px por barra para os rótulos do eixo Y não se sobreporem
+    const chartHeight = Math.max(chartData.length * 40, 120)
 
     return (
         <Card className="h-full">
@@ -114,30 +142,32 @@ export function SatsByRepresentativeChart({ data }: ChartProps) {
                 <CardDescription>SATs abertas por representante</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="h-[300px] w-full">
+                <div className="w-full" style={{ height: chartHeight }}>
                     {data.length > 0 ? (
                         <ResponsiveContainer width="100%" height="100%">
                             <BarChart
                                 layout="vertical"
                                 data={chartData}
-                                margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
+                                margin={{ top: 5, right: 30, left: 0, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="#e5e7eb" />
+                                <CartesianGrid strokeDasharray="3 3" horizontal vertical={false} stroke="var(--border)" />
                                 <XAxis type="number" hide />
                                 <YAxis
                                     dataKey="name"
                                     type="category"
-                                    width={100}
-                                    tick={{ fontSize: 12 }}
+                                    width={190}
+                                    tick={<TruncatedYAxisTick />}
                                     tickLine={false}
                                     axisLine={false}
                                 />
-                                <Tooltip cursor={{ fill: "transparent" }} {...tooltipStyle} />
-                                <Bar dataKey="value" name="SATs" radius={[0, 4, 4, 0]} barSize={28}>
-                                    {chartData.map((_entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={BAR_COLORS[index % BAR_COLORS.length]} />
-                                    ))}
-                                </Bar>
+                                <Tooltip cursor={{ fill: "var(--muted)" }} {...tooltipStyle} />
+                                <Bar
+                                    dataKey="value"
+                                    name="SATs"
+                                    fill="var(--chart-1)"
+                                    radius={[0, 4, 4, 0]}
+                                    barSize={24}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
@@ -166,10 +196,10 @@ export function TopProductsChart({ data }: ChartProps) {
                                 data={chartData}
                                 margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fontSize: 11 }}
+                                    tick={{ fontSize: 11, fill: "var(--muted-foreground)" }}
                                     tickLine={false}
                                     interval={0}
                                     tickFormatter={(val: string) =>
@@ -177,12 +207,14 @@ export function TopProductsChart({ data }: ChartProps) {
                                     }
                                 />
                                 <YAxis hide />
-                                <Tooltip cursor={{ fill: "#f3f4f6" }} {...tooltipStyle} />
-                                <Bar dataKey="value" name="SATs" radius={[4, 4, 0, 0]} barSize={40}>
-                                    {chartData.map((_entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Bar>
+                                <Tooltip cursor={{ fill: "var(--muted)" }} {...tooltipStyle} />
+                                <Bar
+                                    dataKey="value"
+                                    name="SATs"
+                                    fill="var(--chart-2)"
+                                    radius={[4, 4, 0, 0]}
+                                    barSize={40}
+                                />
                             </BarChart>
                         </ResponsiveContainer>
                     ) : (
@@ -251,14 +283,14 @@ export function ProcedenteByLabChart({ data }: { data: ProcedenteByLabData[] }) 
                                 data={data}
                                 margin={{ top: 10, right: 10, left: 10, bottom: 5 }}
                             >
-                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
                                 <XAxis
                                     dataKey="name"
-                                    tick={{ fontSize: 12 }}
+                                    tick={{ fontSize: 12, fill: "var(--muted-foreground)" }}
                                     tickLine={false}
                                 />
                                 <YAxis hide />
-                                <Tooltip cursor={{ fill: "#f3f4f6" }} {...tooltipStyle} />
+                                <Tooltip cursor={{ fill: "var(--muted)" }} {...tooltipStyle} />
                                 <Legend iconType="circle" />
                                 <Bar
                                     dataKey="procedente"

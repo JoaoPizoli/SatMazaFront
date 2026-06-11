@@ -123,7 +123,9 @@ export default function AdminDashboardPage() {
     }, [])
 
     // KPIs
-    const totalSats = sectorData.reduce((acc, curr) => acc + curr.value, 0)
+    // Total vem dos dados de procedência (cobrem todas as SATs);
+    // sectorData exclui SATs ainda sem destino e subcontaria o total
+    const totalSats = procedenteData.reduce((acc, curr) => acc + curr.value, 0)
     const topSectorObj = sectorData.length > 0
         ? sectorData.reduce((prev, current) => (prev.value > current.value ? prev : current))
         : null
