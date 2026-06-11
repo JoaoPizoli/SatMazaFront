@@ -233,3 +233,19 @@ export type ProcedenteByLabData = {
   procedente: number
   improcedente: number
 }
+
+export type MonthlySatData = {
+  name: string // 'YYYY-MM'
+  total: number
+  procedentes: number
+}
+
+export type ResolutionTimeData = {
+  mediaDias: number | null
+  total: number
+}
+
+export type TrocasRecolhimentosData = {
+  trocas: number
+  recolhimentos: number
+}

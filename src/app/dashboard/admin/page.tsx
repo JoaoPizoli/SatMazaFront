@@ -3,21 +3,35 @@
 import { useState, useEffect, useCallback } from "react"
 import { PageTemplate } from "@/components/page-template"
 import {
-    SatsBySectorChart,
     SatsByRepresentativeChart,
     TopProductsChart,
     ProcedenteChart,
     ProcedenteByLabChart,
+    SatsMonthlyChart,
+    AgingChart,
+    LotesReincidentesChart,
 } from "@/components/dashboard/dashboard-charts"
 import {
-    getSatsBySector,
     getSatsByRepresentative,
     getTopProducts,
     getSatsStatusStats,
     getSatsByProcedente,
     getProcedenteByLab,
+    getSatsMonthly,
+    getResolutionTime,
+    getAgingBacklog,
+    getTrocasRecolhimentos,
+    getLotesReincidentes,
 } from "@/lib/api/sat"
-import type { DashboardChartData, DashboardFilter, ErpProduto, ProcedenteByLabData } from "@/types"
+import type {
+    DashboardChartData,
+    DashboardFilter,
+    ErpProduto,
+    MonthlySatData,
+    ProcedenteByLabData,
+    ResolutionTimeData,
+    TrocasRecolhimentosData,
+} from "@/types"
 import { DateInput } from "@/components/ui/date-input"
 import {
     Select,
@@ -29,7 +43,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Loader2, X, Inbox, TrendingUp, Users, CheckCircle, ShieldCheck, Search } from "lucide-react"
+import { Loader2, X, Inbox, CheckCircle, ShieldCheck, Search, Percent, Clock, Repeat, PackageX } from "lucide-react"
 import { RepresentativeSearchSelect } from "@/components/representative-search-select"
 import { ProductSearchSelect } from "@/components/product-search-select"
 
@@ -41,7 +55,7 @@ function MetricCard({
     color,
 }: {
     title: string
-    value: number
+    value: number | string
     description: string
     icon: React.ComponentType<{ className?: string }>
     color: string
@@ -62,12 +76,16 @@ function MetricCard({
 
 export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true)
-    const [sectorData, setSectorData] = useState<DashboardChartData[]>([])
     const [repData, setRepData] = useState<DashboardChartData[]>([])
     const [productData, setProductData] = useState<DashboardChartData[]>([])
     const [statusData, setStatusData] = useState<DashboardChartData[]>([])
     const [procedenteData, setProcedenteData] = useState<DashboardChartData[]>([])
     const [procedenteByLabData, setProcedenteByLabData] = useState<ProcedenteByLabData[]>([])
+    const [monthlyData, setMonthlyData] = useState<MonthlySatData[]>([])
+    const [agingData, setAgingData] = useState<DashboardChartData[]>([])
+    const [lotesData, setLotesData] = useState<DashboardChartData[]>([])
+    const [resolutionData, setResolutionData] = useState<ResolutionTimeData>({ mediaDias: null, total: 0 })
+    const [trocasData, setTrocasData] = useState<TrocasRecolhimentosData>({ trocas: 0, recolhimentos: 0 })
 
     // Filtros
     const [startDate, setStartDate] = useState("")
@@ -87,22 +105,40 @@ export default function AdminDashboardPage() {
                 procedente: procedenteFilter !== "all" ? procedenteFilter : undefined,
             }
 
-            const [sectorRes, repRes, prodRes, statusRes, procedenteRes, procedenteLabRes] =
-                await Promise.all([
-                    getSatsBySector(filter),
-                    getSatsByRepresentative(filter),
-                    getTopProducts(filter),
-                    getSatsStatusStats(filter),
-                    getSatsByProcedente(filter),
-                    getProcedenteByLab(filter),
-                ])
+            const [
+                repRes,
+                prodRes,
+                statusRes,
+                procedenteRes,
+                procedenteLabRes,
+                monthlyRes,
+                agingRes,
+                lotesRes,
+                resolutionRes,
+                trocasRes,
+            ] = await Promise.all([
+                getSatsByRepresentative(filter),
+                getTopProducts(filter),
+                getSatsStatusStats(filter),
+                getSatsByProcedente(filter),
+                getProcedenteByLab(filter),
+                getSatsMonthly(filter),
+                getAgingBacklog(filter),
+                getLotesReincidentes(filter),
+                getResolutionTime(filter),
+                getTrocasRecolhimentos(filter),
+            ])
 
-            setSectorData(sectorRes)
             setRepData(repRes)
             setProductData(prodRes)
             setStatusData(statusRes)
             setProcedenteData(procedenteRes)
             setProcedenteByLabData(procedenteLabRes)
+            setMonthlyData(monthlyRes)
+            setAgingData(agingRes)
+            setLotesData(lotesRes)
+            setResolutionData(resolutionRes)
+            setTrocasData(trocasRes)
         } catch (error) {
             console.error("Erro ao buscar dados do dashboard:", error)
         } finally {
@@ -123,16 +159,18 @@ export default function AdminDashboardPage() {
     }, [])
 
     // KPIs
-    // Total vem dos dados de procedência (cobrem todas as SATs);
-    // sectorData exclui SATs ainda sem destino e subcontaria o total
+    // Total vem dos dados de procedência, que cobrem todas as SATs do filtro
     const totalSats = procedenteData.reduce((acc, curr) => acc + curr.value, 0)
-    const topSectorObj = sectorData.length > 0
-        ? sectorData.reduce((prev, current) => (prev.value > current.value ? prev : current))
-        : null
-    const topRep = repData.length > 0 ? repData[0].name : "N/A"
-    const topRepValue = repData.length > 0 ? repData[0].value : 0
     const totalFinalizadas = statusData.find(s => s.name === "FINALIZADA")?.value || 0
     const totalProcedentes = procedenteData.find(s => s.name === "Procedente")?.value || 0
+    const totalImprocedentes = procedenteData.find(s => s.name === "Improcedente")?.value || 0
+    const totalDecididas = totalProcedentes + totalImprocedentes
+    const taxaProcedencia = totalDecididas > 0
+        ? `${Math.round((totalProcedentes / totalDecididas) * 100)}%`
+        : "—"
+    const tempoMedio = resolutionData.mediaDias !== null
+        ? `${resolutionData.mediaDias.toLocaleString("pt-BR")} dias`
+        : "—"
 
     return (
         <PageTemplate
@@ -202,27 +240,13 @@ export default function AdminDashboardPage() {
             ) : (
                 <>
                     {/* KPIs */}
-                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-5">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                         <MetricCard
                             title="Total de SATs"
                             value={totalSats}
                             description="No período selecionado"
                             icon={Inbox}
                             color="text-blue-500"
-                        />
-                        <MetricCard
-                            title="Setor Principal"
-                            value={topSectorObj?.value ?? 0}
-                            description={topSectorObj?.name ?? "N/A"}
-                            icon={TrendingUp}
-                            color="text-green-500"
-                        />
-                        <MetricCard
-                            title="Top Representante"
-                            value={topRepValue}
-                            description={topRep}
-                            icon={Users}
-                            color="text-purple-500"
                         />
                         <MetricCard
                             title="Total Finalizadas"
@@ -232,25 +256,63 @@ export default function AdminDashboardPage() {
                             color="text-emerald-500"
                         />
                         <MetricCard
+                            title="Taxa de Procedência"
+                            value={taxaProcedencia}
+                            description={`${totalProcedentes} procedentes de ${totalDecididas} decididas`}
+                            icon={Percent}
+                            color="text-rose-500"
+                        />
+                        <MetricCard
+                            title="Tempo Médio de Resolução"
+                            value={tempoMedio}
+                            description={`Abertura até AVT concluída (${resolutionData.total} SATs)`}
+                            icon={Clock}
+                            color="text-sky-500"
+                        />
+                        <MetricCard
                             title="SATs Procedentes"
                             value={totalProcedentes}
                             description="Reclamações procedentes"
                             icon={ShieldCheck}
                             color="text-amber-500"
                         />
+                        <MetricCard
+                            title="Trocas Realizadas"
+                            value={trocasData.trocas}
+                            description="Definidas em AVTs concluídas"
+                            icon={Repeat}
+                            color="text-violet-500"
+                        />
+                        <MetricCard
+                            title="Recolhimentos de Lote"
+                            value={trocasData.recolhimentos}
+                            description="Definidos em AVTs concluídas"
+                            icon={PackageX}
+                            color="text-red-500"
+                        />
                     </div>
 
                     {/* Gráficos — Linha 1 */}
                     <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
                         <div className="lg:col-span-4">
-                            <SatsByRepresentativeChart data={repData} />
+                            <SatsMonthlyChart data={monthlyData} />
                         </div>
                         <div className="lg:col-span-3">
-                            <SatsBySectorChart data={sectorData} />
+                            <AgingChart data={agingData} />
                         </div>
                     </div>
 
                     {/* Gráficos — Linha 2 */}
+                    <div className="grid gap-6 grid-cols-1 lg:grid-cols-7">
+                        <div className="lg:col-span-4">
+                            <SatsByRepresentativeChart data={repData} />
+                        </div>
+                        <div className="lg:col-span-3">
+                            <LotesReincidentesChart data={lotesData} />
+                        </div>
+                    </div>
+
+                    {/* Gráficos — Linha 3 */}
                     <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
                         <TopProductsChart data={productData} />
                         <ProcedenteChart data={procedenteData} />

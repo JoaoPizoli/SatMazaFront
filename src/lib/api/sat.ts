@@ -1,5 +1,5 @@
 import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api"
-import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData, ProcedenteByLabData } from "@/types"
+import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData, ProcedenteByLabData, MonthlySatData, ResolutionTimeData, TrocasRecolhimentosData } from "@/types"
 
 interface PaginatedResponse<T> {
   data: T[]
@@ -151,16 +151,6 @@ function buildFilterQuery(filter: DashboardFilter): string {
 }
 
 /**
- * Buscar estatísticas de SATs por setor (laboratório de destino).
- */
-export async function getSatsBySector(
-  filter: DashboardFilter
-): Promise<DashboardChartData[]> {
-  const query = buildFilterQuery(filter)
-  return apiGet<DashboardChartData[]>(`/sat/dashboard/sector?${query}`)
-}
-
-/**
  * Buscar estatísticas de SATs por representante.
  */
 export async function getSatsByRepresentative(
@@ -208,6 +198,56 @@ export async function getProcedenteByLab(
 ): Promise<ProcedenteByLabData[]> {
   const query = buildFilterQuery(filter)
   return apiGet<ProcedenteByLabData[]>(`/sat/dashboard/procedente-by-lab?${query}`)
+}
+
+/**
+ * Buscar evolução mensal de SATs (total e procedentes por mês).
+ */
+export async function getSatsMonthly(
+  filter: DashboardFilter
+): Promise<MonthlySatData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<MonthlySatData[]>(`/sat/dashboard/monthly?${query}`)
+}
+
+/**
+ * Buscar tempo médio de resolução (abertura da SAT até AVT concluída), em dias.
+ */
+export async function getResolutionTime(
+  filter: DashboardFilter
+): Promise<ResolutionTimeData> {
+  const query = buildFilterQuery(filter)
+  return apiGet<ResolutionTimeData>(`/sat/dashboard/resolution-time?${query}`)
+}
+
+/**
+ * Buscar aging do backlog (SATs não finalizadas por faixa de idade).
+ */
+export async function getAgingBacklog(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/aging?${query}`)
+}
+
+/**
+ * Buscar totais de trocas e recolhimentos de lote (AVTs concluídas).
+ */
+export async function getTrocasRecolhimentos(
+  filter: DashboardFilter
+): Promise<TrocasRecolhimentosData> {
+  const query = buildFilterQuery(filter)
+  return apiGet<TrocasRecolhimentosData>(`/sat/dashboard/trocas-recolhimentos?${query}`)
+}
+
+/**
+ * Buscar lotes reincidentes (lotes com mais de uma SAT).
+ */
+export async function getLotesReincidentes(
+  filter: DashboardFilter
+): Promise<DashboardChartData[]> {
+  const query = buildFilterQuery(filter)
+  return apiGet<DashboardChartData[]>(`/sat/dashboard/lotes-reincidentes?${query}`)
 }
 
 /**
