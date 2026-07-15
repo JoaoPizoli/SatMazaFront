@@ -12,6 +12,7 @@ export enum UserRole {
   BSOLVENTE = "BSOLVENTE",
   REPRESENTANTE = "REPRESENTANTE",
   REPRE_ATENDENTE = "REPRE_ATENDENTE",
+  CHEFE_REPRE_ATENDENTE = "CHEFE_REPRE_ATENDENTE",
 }
 
 export const UserRoleLabels: Record<UserRole, string> = {
@@ -21,6 +22,12 @@ export const UserRoleLabels: Record<UserRole, string> = {
   [UserRole.BSOLVENTE]: "Base Solvente",
   [UserRole.REPRESENTANTE]: "Representante",
   [UserRole.REPRE_ATENDENTE]: "Representante Comercial",
+  [UserRole.CHEFE_REPRE_ATENDENTE]: "Chefe Representante Comercial",
+}
+
+/** Perfis do time comercial (acesso a Indicadores e Acompanhamento de SATs) */
+export function isComercialRole(tipo: UserRole | undefined | null): boolean {
+  return tipo === UserRole.REPRE_ATENDENTE || tipo === UserRole.CHEFE_REPRE_ATENDENTE
 }
 
 // ─── Usuário / Auth ──────────────────────────────────────────────────────────

@@ -183,11 +183,19 @@ export function UserDialog({ open, onOpenChange, userToEdit, onSuccess }: UserDi
                                 <SelectValue placeholder="Selecione um perfil" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Object.values(UserRole).map((role) => (
-                                    <SelectItem key={role} value={role}>
-                                        {UserRoleLabels[role]}
-                                    </SelectItem>
-                                ))}
+                                {/* Perfis comerciais (REPRE_ATENDENTE / CHEFE) são gerenciados
+                                    na seção "Representantes Comerciais", não aqui */}
+                                {Object.values(UserRole)
+                                    .filter(
+                                        (role) =>
+                                            role !== UserRole.REPRE_ATENDENTE &&
+                                            role !== UserRole.CHEFE_REPRE_ATENDENTE
+                                    )
+                                    .map((role) => (
+                                        <SelectItem key={role} value={role}>
+                                            {UserRoleLabels[role]}
+                                        </SelectItem>
+                                    ))}
                             </SelectContent>
                         </Select>
                         {errors.perfil && <p className="text-xs text-destructive">{errors.perfil.message}</p>}

@@ -49,10 +49,33 @@ export type RepreAtendente = {
     nome_representante_comercial: string
     email_representante_comercial: string
     password_changed: boolean
+    tipo: "REPRE_ATENDENTE" | "CHEFE_REPRE_ATENDENTE"
 }
+
+export type CreateRepreAtendenteDto = {
+    nome_representante_comercial: string
+    email_representante_comercial: string
+    usuarios?: string[]
+    tipo?: RepreAtendente["tipo"]
+    senha?: string
+}
+
+export type UpdateRepreAtendenteDto = Omit<CreateRepreAtendenteDto, "senha">
 
 export async function getRepreAtendentes(): Promise<RepreAtendente[]> {
     return await apiGet<RepreAtendente[]>("/usuario/repre-atendente")
+}
+
+export async function createRepreAtendente(data: CreateRepreAtendenteDto): Promise<RepreAtendente> {
+    return await apiPost<RepreAtendente>("/usuario/repre-atendente", data)
+}
+
+export async function updateRepreAtendente(id: number, data: UpdateRepreAtendenteDto): Promise<RepreAtendente> {
+    return await apiPatch<RepreAtendente>(`/usuario/repre-atendente/${id}`, data)
+}
+
+export async function deleteRepreAtendente(id: number): Promise<void> {
+    await apiDelete(`/usuario/repre-atendente/${id}`)
 }
 
 export async function updateRepreAtendenteSenha(id: number, senha: string): Promise<RepreAtendente> {

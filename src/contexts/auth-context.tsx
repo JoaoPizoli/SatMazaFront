@@ -9,7 +9,7 @@ import {
   type ReactNode,
 } from "react"
 import { useRouter, usePathname } from "next/navigation"
-import { UserRole, type User } from "@/types"
+import { UserRole, isComercialRole, type User } from "@/types"
 import { login as apiLogin, logout as apiLogout, getMe } from "@/lib/api/auth"
 import { getStoredToken, clearAllTokens, tryRestoreSession } from "@/lib/api"
 
@@ -86,18 +86,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       isAuthenticated &&
       user!.tipo === UserRole.REPRESENTANTE &&
       !user!.password_changed
-    const isRepreAtendente = isAuthenticated && user!.tipo === UserRole.REPRE_ATENDENTE
+    const isComercial = isAuthenticated && isComercialRole(user!.tipo)
+    // Telas permitidas ao time comercial (REPRE_ATENDENTE e CHEFE_REPRE_ATENDENTE)
+    const comercialAllowedPaths = ["/dashboard/admin", "/dashboard/acompanhamento"]
 
     if (!isAuthenticated && !isLoginPage && !isCompleteRegistrationPage) {
       router.replace("/login")
     } else if (needsSetup && !isCompleteRegistrationPage) {
       // Representante com cadastro incompleto: redireciona independente de onde estiver
       router.replace("/complete-registration")
-    } else if (isRepreAtendente && pathname !== "/dashboard/admin") {
-      // REPRE_ATENDENTE só pode acessar indicadores
+    } else if (isComercial && !comercialAllowedPaths.includes(pathname)) {
+      // Time comercial só pode acessar indicadores e acompanhamento de SATs
       router.replace("/dashboard/admin")
     } else if (isAuthenticated && !needsSetup && isLoginPage) {
-      router.replace(isRepreAtendente ? "/dashboard/admin" : "/dashboard")
+      router.replace(isComercial ? "/dashboard/admin" : "/dashboard")
     }
   }, [user, isLoading, pathname, router])
 

@@ -19,7 +19,7 @@ import Image from "next/image"
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useAuth } from "@/contexts/auth-context"
-import { UserRole, UserRoleLabels } from "@/types"
+import { UserRole, UserRoleLabels, isComercialRole } from "@/types"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import {
   Sidebar,
@@ -89,8 +89,10 @@ function getNavItems(tipo: UserRole): NavItem[] {
         { title: "Finalizadas", href: "/dashboard/finalizadas", icon: CheckCircle },
       ]
     case UserRole.REPRE_ATENDENTE:
+    case UserRole.CHEFE_REPRE_ATENDENTE:
       return [
         { title: "Indicadores", href: "/dashboard/admin", icon: BarChart3 },
+        { title: "Acompanhamento de SATs", href: "/dashboard/acompanhamento", icon: FileText },
       ]
     default:
       return [
@@ -119,7 +121,7 @@ export function AppSidebar() {
   if (!user) return null
 
   const navItems = getNavItems(user.tipo)
-  const homeHref = user.tipo === UserRole.REPRE_ATENDENTE ? "/dashboard/admin" : "/dashboard"
+  const homeHref = isComercialRole(user.tipo) ? "/dashboard/admin" : "/dashboard"
 
   return (
     <Sidebar collapsible="icon" variant="sidebar">
@@ -192,7 +194,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {user.tipo === UserRole.REPRESENTANTE || user.tipo === UserRole.REPRE_ATENDENTE
+                      {user.tipo === UserRole.REPRESENTANTE || isComercialRole(user.tipo)
                         ? (user.nome ?? `Cód. ${user.usuario}`)
                         : (user.email ?? `Cód. ${user.usuario}`)}
                     </span>
@@ -217,7 +219,7 @@ export function AppSidebar() {
                   </Avatar>
                   <div className="grid flex-1 text-left text-sm leading-tight">
                     <span className="truncate font-semibold">
-                      {user.tipo === UserRole.REPRESENTANTE || user.tipo === UserRole.REPRE_ATENDENTE
+                      {user.tipo === UserRole.REPRESENTANTE || isComercialRole(user.tipo)
                         ? (user.nome ?? `Cód. ${user.usuario}`)
                         : (user.email ?? `Cód. ${user.usuario}`)}
                     </span>
