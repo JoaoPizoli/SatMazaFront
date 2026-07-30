@@ -93,6 +93,7 @@ export default function AdminDashboardPage() {
     const [selectedRep, setSelectedRep] = useState<{ CODREP: string; NOMREP: string } | null>(null)
     const [selectedProduct, setSelectedProduct] = useState<ErpProduto | null>(null)
     const [procedenteFilter, setProcedenteFilter] = useState<"all" | "true" | "false">("all")
+    const [loteFilter, setLoteFilter] = useState<"all" | "com" | "sem">("all")
 
     const fetchData = useCallback(async () => {
         setLoading(true)
@@ -103,6 +104,7 @@ export default function AdminDashboardPage() {
                 representanteCodigo: selectedRep?.CODREP,
                 produto: selectedProduct?.DESCRICAO_ITEM,
                 procedente: procedenteFilter !== "all" ? procedenteFilter : undefined,
+                semLote: loteFilter === "all" ? undefined : loteFilter === "sem" ? "true" : "false",
             }
 
             const [
@@ -144,7 +146,7 @@ export default function AdminDashboardPage() {
         } finally {
             setLoading(false)
         }
-    }, [startDate, endDate, selectedRep, selectedProduct, procedenteFilter])
+    }, [startDate, endDate, selectedRep, selectedProduct, procedenteFilter, loteFilter])
 
     useEffect(() => {
         fetchData()
@@ -156,6 +158,7 @@ export default function AdminDashboardPage() {
         setSelectedRep(null)
         setSelectedProduct(null)
         setProcedenteFilter("all")
+        setLoteFilter("all")
     }, [])
 
     // KPIs
@@ -186,7 +189,7 @@ export default function AdminDashboardPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 items-end">
+                    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-7 items-end">
                         <div className="space-y-2">
                             <Label>Data Inicial</Label>
                             <DateInput value={startDate} onChange={setStartDate} />
@@ -222,6 +225,22 @@ export default function AdminDashboardPage() {
                                     <SelectItem value="all">Todos</SelectItem>
                                     <SelectItem value="true">Procedente</SelectItem>
                                     <SelectItem value="false">Improcedente</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Lote</Label>
+                            <Select
+                                value={loteFilter}
+                                onValueChange={(v) => setLoteFilter(v as "all" | "com" | "sem")}
+                            >
+                                <SelectTrigger className="w-full">
+                                    <SelectValue placeholder="Todos" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="all">Todos</SelectItem>
+                                    <SelectItem value="com">Com lote</SelectItem>
+                                    <SelectItem value="sem">Sem lote</SelectItem>
                                 </SelectContent>
                             </Select>
                         </div>

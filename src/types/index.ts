@@ -228,6 +228,7 @@ export type DashboardFilter = {
   representanteCodigo?: string
   produto?: string
   procedente?: 'true' | 'false'
+  semLote?: 'true' | 'false'
 }
 
 export type DashboardChartData = {

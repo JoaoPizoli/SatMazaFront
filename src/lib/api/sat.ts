@@ -147,6 +147,7 @@ function buildFilterQuery(filter: DashboardFilter): string {
   if (filter.representanteCodigo) query.append('representanteCodigo', filter.representanteCodigo) // Added
   if (filter.produto) query.append('produto', filter.produto)
   if (filter.procedente) query.append('procedente', filter.procedente)
+  if (filter.semLote) query.append('semLote', filter.semLote)
   return query.toString()
 }
 
