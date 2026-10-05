@@ -1,4 +1,4 @@
-import { apiGet, apiPost, apiPatch, apiDelete } from "@/lib/api"
+import { apiGet, apiPost, apiPatch, apiDelete, apiDownload } from "@/lib/api"
 import type { SAT, SATStatus, SATDestino, DashboardFilter, DashboardChartData, ProcedenteByLabData, MonthlySatData, ResolutionTimeData, TrocasRecolhimentosData } from "@/types"
 
 interface PaginatedResponse<T> {
@@ -254,29 +254,10 @@ export async function getLotesReincidentes(
 /**
  * Helper interno: baixa um PDF autenticado de um endpoint da API e dispara
  * o download no navegador com o nome de arquivo informado.
+ * Sem timeout: o PDF da AVT pode embutir imagens do laudo e demorar.
  */
 async function downloadPdfFromApi(path: string, filename: string): Promise<void> {
-  const { getStoredToken } = await import("@/lib/api")
-  const token = getStoredToken()
-  const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3040"
-
-  const res = await fetch(`${API_URL}${path}`, {
-    headers: { Authorization: `Bearer ${token}` },
-  })
-
-  if (!res.ok) {
-    throw new Error("Erro ao gerar PDF.")
-  }
-
-  const blob = await res.blob()
-  const url = URL.createObjectURL(blob)
-  const a = document.createElement("a")
-  a.href = url
-  a.download = filename
-  document.body.appendChild(a)
-  a.click()
-  a.remove()
-  URL.revokeObjectURL(url)
+  return apiDownload(path, filename)
 }
 
 /**

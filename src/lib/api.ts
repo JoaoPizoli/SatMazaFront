@@ -143,10 +143,16 @@ function sanitizeErrorMessage(status: number, rawMessage: string): string {
 
 // ─── Core fetch wrapper ───────────────────────────────────────────────────────
 
+export type RequestOptions = {
+  /** Tempo máximo da requisição em ms (padrão: 15s) */
+  timeoutMs?: number
+}
+
 async function request<T>(
   path: string,
   options: RequestInit = {},
   isRetry = false,
+  timeoutMs = REQUEST_TIMEOUT_MS,
 ): Promise<T> {
   const token = getStoredToken()
 
@@ -160,7 +166,7 @@ async function request<T>(
   }
 
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS)
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
   let res: Response
   try {
@@ -187,7 +193,7 @@ async function request<T>(
     if (!isRetry) {
       const refreshed = await tryRefreshToken()
       if (refreshed) {
-        return request<T>(path, options, true)
+        return request<T>(path, options, true, timeoutMs)
       }
     }
 
@@ -234,15 +240,20 @@ async function request<T>(
 
 // ─── Métodos HTTP tipados ─────────────────────────────────────────────────────
 
-export function apiGet<T>(path: string): Promise<T> {
-  return request<T>(path, { method: "GET" })
+export function apiGet<T>(path: string, opts: RequestOptions = {}): Promise<T> {
+  return request<T>(path, { method: "GET" }, false, opts.timeoutMs)
 }
 
-export function apiPost<T>(path: string, data?: unknown): Promise<T> {
-  return request<T>(path, {
-    method: "POST",
-    body: data ? JSON.stringify(data) : undefined,
-  })
+export function apiPost<T>(path: string, data?: unknown, opts: RequestOptions = {}): Promise<T> {
+  return request<T>(
+    path,
+    {
+      method: "POST",
+      body: data ? JSON.stringify(data) : undefined,
+    },
+    false,
+    opts.timeoutMs,
+  )
 }
 
 export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
@@ -254,4 +265,67 @@ export function apiPatch<T>(path: string, data?: unknown): Promise<T> {
 
 export function apiDelete(path: string): Promise<void> {
   return request<void>(path, { method: "DELETE" })
+}
+
+/**
+ * Baixa um arquivo autenticado (ex.: PDF) e dispara o download no navegador.
+ * Renova o token uma vez em caso de 401. Sem `timeoutMs`, não há limite de tempo.
+ */
+export async function apiDownload(
+  path: string,
+  filename: string,
+  opts: RequestOptions = {},
+  isRetry = false,
+): Promise<void> {
+  const token = getStoredToken()
+
+  let res: Response
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+      signal: opts.timeoutMs ? AbortSignal.timeout(opts.timeoutMs) : undefined,
+    })
+  } catch (err) {
+    if (err instanceof Error && (err.name === "TimeoutError" || err.name === "AbortError")) {
+      throw new ApiError(0, "A requisição expirou. Verifique sua conexão.")
+    }
+    throw new ApiError(0, "Erro de conexão. Verifique sua internet.")
+  }
+
+  if (res.status === 401) {
+    if (!isRetry && (await tryRefreshToken())) {
+      return apiDownload(path, filename, opts, true)
+    }
+    clearAllTokens()
+    if (typeof window !== "undefined" && !window.location.pathname.includes("/login")) {
+      window.location.href = "/login"
+    }
+    throw new ApiError(401, "Sessão expirada. Faça login novamente.")
+  }
+
+  if (res.status === 403) {
+    throw new ApiError(403, "Acesso negado. Você não tem permissão para esta ação.")
+  }
+
+  if (!res.ok) {
+    let rawMessage = "Erro ao gerar o arquivo."
+    try {
+      const json = await res.json()
+      rawMessage = json.message || json.error || rawMessage
+      if (Array.isArray(rawMessage)) rawMessage = rawMessage.join(", ")
+    } catch {
+      // corpo sem JSON: mantém a mensagem padrão
+    }
+    throw new ApiError(res.status, sanitizeErrorMessage(res.status, rawMessage))
+  }
+
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement("a")
+  a.href = url
+  a.download = filename
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  URL.revokeObjectURL(url)
 }

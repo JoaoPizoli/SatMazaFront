@@ -257,3 +257,152 @@ export type TrocasRecolhimentosData = {
   trocas: number
   recolhimentos: number
 }
+
+export type PaginatedResponse<T> = {
+  data: T[]
+  meta: {
+    total: number
+    page: number
+    limit: number
+    totalPages: number
+  }
+}
+
+// ─── Relatório de SATs (espelha src/relatorio/relatorio.types.ts do backend) ──
+
+/** Período do relatório: dias de Brasília, fim inclusivo */
+export type RelatorioPeriodo = {
+  inicio: string // 'AAAA-MM-DD'
+  fim: string // 'AAAA-MM-DD'
+  dias: number
+  mesesCompletos: number | null
+  rotulo: string // 'Setembro/2026', '10/09/2026 a 24/09/2026'
+}
+
+export type RelatorioIndicadores = {
+  totalSats: number
+  finalizadas: number
+  emAberto: number
+  procedentes: number
+  improcedentes: number
+  aguardandoDecisao: number
+  taxaProcedencia: number | null
+  tempoMedioDias: number | null
+  baseTempoMedio: number
+  trocas: number
+  recolhimentos: number
+}
+
+export type RelatorioVariacaoSituacao = "ALTA" | "QUEDA" | "ESTAVEL" | "NOVO" | "SEM_DADOS"
+export type RelatorioVariacaoAvaliacao = "POSITIVA" | "NEGATIVA" | "NEUTRA"
+
+export type RelatorioComparacao = {
+  chave: keyof RelatorioIndicadores
+  titulo: string
+  formato: "numero" | "percentual" | "dias"
+  atual: number | null
+  anterior: number | null
+  atualTexto: string
+  anteriorTexto: string
+  variacao: number | null
+  unidadeVariacao: "%" | "p.p."
+  situacao: RelatorioVariacaoSituacao
+  avaliacao: RelatorioVariacaoAvaliacao
+  texto: string // '+12,5%', '-1,5 p.p.', 'novo', '—'
+}
+
+export type RelatorioProcedencia = "Procedente" | "Improcedente" | "Pendente"
+
+export type RelatorioSatItem = {
+  id: string
+  codigo: string
+  abertura: string // ISO
+  cliente: string
+  cidade: string
+  produto: string
+  quantidade: number
+  lotes: string
+  representante: string
+  status: SATStatus
+  statusTexto: string
+  laboratorio: string | null
+  procedencia: RelatorioProcedencia
+  troca: boolean
+  recolhimento: boolean
+}
+
+export type RelatorioDados = {
+  periodo: RelatorioPeriodo
+  periodoAnterior: RelatorioPeriodo
+  periodoAnteriorSemDados: boolean
+  geradoEm: string
+  indicadores: RelatorioIndicadores
+  indicadoresAnterior: RelatorioIndicadores
+  comparacao: RelatorioComparacao[]
+  porStatus: DashboardChartData[]
+  porLaboratorio: DashboardChartData[]
+  procedencia: DashboardChartData[]
+  procedenciaPorLaboratorio: ProcedenteByLabData[]
+  topRepresentantes: DashboardChartData[]
+  topProdutos: DashboardChartData[]
+  lotesReincidentes: DashboardChartData[]
+  evolucaoMensal: MonthlySatData[]
+  sats: RelatorioSatItem[]
+}
+
+export type RelatorioPreview = {
+  assunto: string
+  html: string
+}
+
+export type RelatorioDestinatario = {
+  id: number
+  email: string
+  nome: string | null
+  ativo: boolean
+  createdAt: string
+  updatedAt: string
+}
+
+export type RelatorioConfiguracao = {
+  id: number
+  envio_automatico_ativo: boolean
+  dia_envio: number
+  hora_envio: number
+  ativado_em: string | null
+  atualizado_por: string | null
+  updatedAt: string
+}
+
+export type RelatorioEnvioTipo = "AUTOMATICO" | "MANUAL"
+export type RelatorioEnvioStatus = "PROCESSANDO" | "SUCESSO" | "FALHA"
+
+export type RelatorioEnvio = {
+  id: string
+  tipo: RelatorioEnvioTipo
+  status: RelatorioEnvioStatus
+  periodo_inicio: string // 'AAAA-MM-DD'
+  periodo_fim: string
+  destinatarios: string[]
+  total_sats: number | null
+  erro: string | null
+  enviado_por: string | null // null = envio automático
+  concluido_em: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export type RelatorioProximoEnvio = {
+  situacao: "AGENDADO" | "PENDENTE" | "RETENTATIVA" | "EM_ANDAMENTO"
+  data: string // 'AAAA-MM-DD' (Brasília) do horário agendado
+  hora: number
+  periodo: RelatorioPeriodo
+  novaTentativaEm?: string // ISO — só em RETENTATIVA
+}
+
+export type RelatorioConfiguracaoResposta = {
+  configuracao: RelatorioConfiguracao
+  destinatariosAtivos: number
+  proximoEnvio: RelatorioProximoEnvio | null
+  ultimoEnvioAutomatico: RelatorioEnvio | null
+}

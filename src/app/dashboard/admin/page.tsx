@@ -46,33 +46,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Loader2, X, Inbox, CheckCircle, ShieldCheck, Search, Percent, Clock, Repeat, PackageX } from "lucide-react"
 import { RepresentativeSearchSelect } from "@/components/representative-search-select"
 import { ProductSearchSelect } from "@/components/product-search-select"
-
-function MetricCard({
-    title,
-    value,
-    description,
-    icon: Icon,
-    color,
-}: {
-    title: string
-    value: number | string
-    description: string
-    icon: React.ComponentType<{ className?: string }>
-    color: string
-}) {
-    return (
-        <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">{title}</CardTitle>
-                <Icon className={`h-5 w-5 ${color}`} />
-            </CardHeader>
-            <CardContent>
-                <div className="text-3xl font-bold">{value}</div>
-                <p className="text-xs text-muted-foreground mt-1">{description}</p>
-            </CardContent>
-        </Card>
-    )
-}
+import { MetricCard } from "@/components/dashboard/metric-card"
 
 export default function AdminDashboardPage() {
     const [loading, setLoading] = useState(true)

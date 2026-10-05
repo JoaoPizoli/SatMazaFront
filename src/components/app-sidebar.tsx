@@ -14,6 +14,7 @@ import {
   TestTubes,
   BarChart3,
   Users,
+  FileChartColumn,
 } from "lucide-react"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -54,6 +55,7 @@ function getNavItems(tipo: UserRole): NavItem[] {
       return [
         { title: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
         { title: "Indicadores", href: "/dashboard/admin", icon: BarChart3 },
+        { title: "Relatórios", href: "/dashboard/admin/relatorios", icon: FileChartColumn },
         { title: "Usuários", href: "/dashboard/admin/usuarios", icon: Users },
         { title: "SATs Pendentes", href: "/dashboard/pendentes", icon: Inbox },
         { title: "SATs em Laboratório", href: "/dashboard/enviar", icon: TestTubes },

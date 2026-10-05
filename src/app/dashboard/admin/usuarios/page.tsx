@@ -269,8 +269,8 @@ export default function AdminUsersPage() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário
-                            <b> {userToDelete?.usuario} </b> e removerá seus dados do servidor.
+                            O usuário <b>{userToDelete?.usuario}</b> perderá o acesso ao sistema.
+                            As SATs abertas por ele e seu histórico serão mantidos.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
