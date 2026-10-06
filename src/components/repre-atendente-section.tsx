@@ -41,7 +41,6 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { ScrollArea } from "@/components/ui/scroll-area"
 import { useToast } from "@/components/ui/use-toast"
 import {
     getRepreAtendentes,
@@ -258,108 +257,108 @@ export function RepreAtendenteSection() {
                     </Button>
                 </CardHeader>
                 <CardContent>
-                    <div className="rounded-md border">
-                        <ScrollArea className="max-h-[400px]">
-                            <Table>
-                                <TableHeader className="sticky top-0 bg-background z-10">
+                    {/* Rolagem nativa: o ScrollArea não respeita max-h (o viewport cresce com o conteúdo e vaza do card).
+                        O container interno da Table fica overflow-visible para o cabeçalho sticky usar este div como referência. */}
+                    <div className="max-h-[400px] overflow-auto rounded-md border [&_[data-slot=table-container]]:overflow-visible">
+                        <Table>
+                            <TableHeader className="sticky top-0 bg-background z-10">
+                                <TableRow>
+                                    <TableHead>ID</TableHead>
+                                    <TableHead>Nome</TableHead>
+                                    <TableHead className="hidden sm:table-cell">E-mail</TableHead>
+                                    <TableHead className="hidden lg:table-cell">Perfil</TableHead>
+                                    <TableHead className="hidden md:table-cell">Representantes</TableHead>
+                                    <TableHead>Acesso</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {isLoading ? (
                                     <TableRow>
-                                        <TableHead>ID</TableHead>
-                                        <TableHead>Nome</TableHead>
-                                        <TableHead className="hidden sm:table-cell">E-mail</TableHead>
-                                        <TableHead className="hidden lg:table-cell">Perfil</TableHead>
-                                        <TableHead className="hidden md:table-cell">Representantes</TableHead>
-                                        <TableHead>Acesso</TableHead>
-                                        <TableHead className="text-right">Ações</TableHead>
+                                        <TableCell colSpan={7} className="h-24 text-center">
+                                            Carregando...
+                                        </TableCell>
                                     </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {isLoading ? (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
-                                                Carregando...
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : repres.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={7} className="h-24 text-center">
-                                                Nenhum representante comercial cadastrado.
-                                            </TableCell>
-                                        </TableRow>
-                                    ) : (
-                                        repres.map((repre) => {
-                                            const chefe = repre.tipo === "CHEFE_REPRE_ATENDENTE"
-                                            return (
-                                                <TableRow key={repre.id}>
-                                                    <TableCell>{repre.id}</TableCell>
-                                                    <TableCell>{repre.nome_representante_comercial}</TableCell>
-                                                    <TableCell className="hidden sm:table-cell">
-                                                        {repre.email_representante_comercial}
-                                                    </TableCell>
-                                                    <TableCell className="hidden lg:table-cell">
-                                                        <Badge variant={chefe ? "default" : "secondary"}>
-                                                            {chefe ? "Chefe" : "Comercial"}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="hidden md:table-cell">
-                                                        {chefe ? (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                Todos os representantes
-                                                            </span>
-                                                        ) : repre.usuarios.length === 0 ? (
-                                                            <span className="text-xs text-muted-foreground">
-                                                                Nenhum vinculado — sem acesso a dados
-                                                            </span>
-                                                        ) : (
-                                                            <div className="flex gap-1 flex-wrap">
-                                                                {repre.usuarios.map((u) => (
-                                                                    <Badge key={u} variant="secondary" className="text-xs">
-                                                                        {u}
-                                                                    </Badge>
-                                                                ))}
-                                                            </div>
-                                                        )}
-                                                    </TableCell>
-                                                    <TableCell>
-                                                        <Badge variant={repre.password_changed ? "default" : "outline"}>
-                                                            {repre.password_changed ? "Ativo" : "Sem senha"}
-                                                        </Badge>
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        <div className="flex justify-end gap-1">
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title="Editar"
-                                                                onClick={() => handleEdit(repre)}
-                                                            >
-                                                                <Pencil className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title={`${repre.password_changed ? "Redefinir" : "Definir"} senha`}
-                                                                onClick={() => handleDefinirSenha(repre)}
-                                                            >
-                                                                <KeyRound className="h-4 w-4" />
-                                                            </Button>
-                                                            <Button
-                                                                variant="ghost"
-                                                                size="icon"
-                                                                title="Excluir"
-                                                                className="text-destructive hover:text-destructive"
-                                                                onClick={() => handleDeleteClick(repre)}
-                                                            >
-                                                                <Trash2 className="h-4 w-4" />
-                                                            </Button>
+                                ) : repres.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={7} className="h-24 text-center">
+                                            Nenhum representante comercial cadastrado.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    repres.map((repre) => {
+                                        const chefe = repre.tipo === "CHEFE_REPRE_ATENDENTE"
+                                        return (
+                                            <TableRow key={repre.id}>
+                                                <TableCell>{repre.id}</TableCell>
+                                                <TableCell>{repre.nome_representante_comercial}</TableCell>
+                                                <TableCell className="hidden sm:table-cell">
+                                                    {repre.email_representante_comercial}
+                                                </TableCell>
+                                                <TableCell className="hidden lg:table-cell">
+                                                    <Badge variant={chefe ? "default" : "secondary"}>
+                                                        {chefe ? "Chefe" : "Comercial"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="hidden md:table-cell">
+                                                    {chefe ? (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Todos os representantes
+                                                        </span>
+                                                    ) : repre.usuarios.length === 0 ? (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            Nenhum vinculado — sem acesso a dados
+                                                        </span>
+                                                    ) : (
+                                                        <div className="flex gap-1 flex-wrap">
+                                                            {repre.usuarios.map((u) => (
+                                                                <Badge key={u} variant="secondary" className="text-xs">
+                                                                    {u}
+                                                                </Badge>
+                                                            ))}
                                                         </div>
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </ScrollArea>
+                                                    )}
+                                                </TableCell>
+                                                <TableCell>
+                                                    <Badge variant={repre.password_changed ? "default" : "outline"}>
+                                                        {repre.password_changed ? "Ativo" : "Sem senha"}
+                                                    </Badge>
+                                                </TableCell>
+                                                <TableCell className="text-right">
+                                                    <div className="flex justify-end gap-1">
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Editar"
+                                                            onClick={() => handleEdit(repre)}
+                                                        >
+                                                            <Pencil className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title={`${repre.password_changed ? "Redefinir" : "Definir"} senha`}
+                                                            onClick={() => handleDefinirSenha(repre)}
+                                                        >
+                                                            <KeyRound className="h-4 w-4" />
+                                                        </Button>
+                                                        <Button
+                                                            variant="ghost"
+                                                            size="icon"
+                                                            title="Excluir"
+                                                            className="text-destructive hover:text-destructive"
+                                                            onClick={() => handleDeleteClick(repre)}
+                                                        >
+                                                            <Trash2 className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                </TableCell>
+                                            </TableRow>
+                                        )
+                                    })
+                                )}
+                            </TableBody>
+                        </Table>
                     </div>
                 </CardContent>
             </Card>
