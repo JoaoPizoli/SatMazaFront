@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { ChevronLeft, ChevronRight, Loader2, RefreshCw } from "lucide-react"
+import { ChevronLeft, ChevronRight, Loader2, Mail, MessageCircle, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -10,13 +10,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { FeedbackBanner } from "@/components/feedback-banner"
 import { getHistoricoRelatorio, mensagemDeErro } from "@/lib/api/relatorio"
 import { formatarDataHoraBR, rotuloPeriodo } from "@/lib/relatorio-periodo"
+import { formatarTelefoneBR } from "@/lib/telefone"
 import { cn } from "@/lib/utils"
-import type { PaginatedResponse, RelatorioEnvio, RelatorioEnvioStatus } from "@/types"
+import type { PaginatedResponse, RelatorioEnvio, RelatorioEnvioCanal, RelatorioEnvioStatus } from "@/types"
 
 const LIMITE = 20
 
 const STATUS_ENVIO: Record<RelatorioEnvioStatus, { rotulo: string; classe: string }> = {
     SUCESSO: { rotulo: "Enviado", classe: "border-emerald-200 bg-emerald-50 text-emerald-700" },
+    PARCIAL: { rotulo: "Parcial", classe: "border-amber-200 bg-amber-50 text-amber-800" },
     FALHA: { rotulo: "Falhou", classe: "border-red-200 bg-red-50 text-red-700" },
     PROCESSANDO: { rotulo: "Enviando", classe: "border-slate-200 bg-slate-50 text-slate-600" },
 }
@@ -28,6 +30,24 @@ export function StatusEnvioBadge({ status }: { status: RelatorioEnvioStatus }) {
             {rotulo}
         </Badge>
     )
+}
+
+export function CanalEnvioBadge({ canal }: { canal: RelatorioEnvioCanal }) {
+    return (
+        <Badge variant="outline" className="gap-1 whitespace-nowrap">
+            {canal === "WHATSAPP" ? <MessageCircle className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
+            {canal === "WHATSAPP" ? "WhatsApp" : "E-mail"}
+        </Badge>
+    )
+}
+
+/** "3 e-mails" / "2 números" e a lista para o tooltip. */
+export function descreverDestinatarios(envio: RelatorioEnvio): { resumo: string; lista: string } {
+    const n = envio.destinatarios.length
+    if (envio.canal === "WHATSAPP") {
+        return { resumo: `${n} ${n === 1 ? "número" : "números"}`, lista: envio.destinatarios.map(formatarTelefoneBR).join(", ") }
+    }
+    return { resumo: `${n} ${n === 1 ? "e-mail" : "e-mails"}`, lista: envio.destinatarios.join(", ") }
 }
 
 export function RelatorioHistoricoTab() {
@@ -61,7 +81,7 @@ export function RelatorioHistoricoTab() {
             <CardHeader className="flex flex-col gap-3 space-y-0 sm:flex-row sm:items-center sm:justify-between">
                 <div className="space-y-1.5">
                     <CardTitle className="text-lg">Histórico de envios</CardTitle>
-                    <CardDescription>Envios manuais e automáticos do relatório, do mais recente para o mais antigo.</CardDescription>
+                    <CardDescription>Envios manuais e automáticos do relatório (um registro por canal), do mais recente para o mais antigo.</CardDescription>
                 </div>
                 <Button variant="outline" onClick={carregar} disabled={carregando}>
                     {carregando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}
@@ -76,6 +96,7 @@ export function RelatorioHistoricoTab() {
                             <TableRow>
                                 <TableHead>Data</TableHead>
                                 <TableHead>Origem</TableHead>
+                                <TableHead>Canal</TableHead>
                                 <TableHead>Período</TableHead>
                                 <TableHead className="hidden md:table-cell">Destinatários</TableHead>
                                 <TableHead>Situação</TableHead>
@@ -87,11 +108,11 @@ export function RelatorioHistoricoTab() {
                         <TableBody>
                             {carregando && !resultado ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center">Carregando...</TableCell>
+                                    <TableCell colSpan={9} className="h-24 text-center">Carregando...</TableCell>
                                 </TableRow>
                             ) : envios.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                                    <TableCell colSpan={9} className="h-24 text-center text-muted-foreground">
                                         Nenhum envio registrado.
                                     </TableCell>
                                 </TableRow>
@@ -104,15 +125,16 @@ export function RelatorioHistoricoTab() {
                                                 {envio.tipo === "AUTOMATICO" ? "Automático" : "Manual"}
                                             </Badge>
                                         </TableCell>
+                                        <TableCell><CanalEnvioBadge canal={envio.canal} /></TableCell>
                                         <TableCell className="whitespace-nowrap">{rotuloPeriodo(envio.periodo_inicio, envio.periodo_fim)}</TableCell>
                                         <TableCell className="hidden md:table-cell">
                                             <Tooltip>
                                                 <TooltipTrigger asChild>
                                                     <span className="cursor-help underline decoration-dotted underline-offset-4">
-                                                        {envio.destinatarios.length} {envio.destinatarios.length === 1 ? "e-mail" : "e-mails"}
+                                                        {descreverDestinatarios(envio).resumo}
                                                     </span>
                                                 </TooltipTrigger>
-                                                <TooltipContent className="max-w-sm break-words">{envio.destinatarios.join(", ")}</TooltipContent>
+                                                <TooltipContent className="max-w-sm break-words">{descreverDestinatarios(envio).lista}</TooltipContent>
                                             </Tooltip>
                                         </TableCell>
                                         <TableCell><StatusEnvioBadge status={envio.status} /></TableCell>

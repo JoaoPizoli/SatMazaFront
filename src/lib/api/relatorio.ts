@@ -7,6 +7,7 @@ import type {
   RelatorioDados,
   RelatorioDestinatario,
   RelatorioEnvio,
+  RelatorioEnvioCanal,
   RelatorioPreview,
 } from "@/types"
 
@@ -48,11 +49,15 @@ export async function downloadRelatorioPdf(periodo: PeriodoConsulta): Promise<vo
   )
 }
 
-/** Envia o relatório agora. Sem `destinatarios`, usa a lista de destinatários ativos. */
+/**
+ * Envia o relatório agora. Sem `destinatarios`/`telefones`, usa a lista de destinatários ativos
+ * nos `canais` escolhidos. Retorna um registro por canal: o e-mail já concluído e o WhatsApp
+ * em PROCESSANDO (enviado em segundo plano; resultado no histórico).
+ */
 export async function enviarRelatorio(
-  dados: PeriodoConsulta & { destinatarios?: string[] },
-): Promise<RelatorioEnvio> {
-  return apiPost<RelatorioEnvio>("/relatorio/enviar", dados, { timeoutMs: TIMEOUT_ENVIO_MS })
+  dados: PeriodoConsulta & { destinatarios?: string[]; telefones?: string[]; canais?: RelatorioEnvioCanal[] },
+): Promise<RelatorioEnvio[]> {
+  return apiPost<RelatorioEnvio[]>("/relatorio/enviar", dados, { timeoutMs: TIMEOUT_ENVIO_MS })
 }
 
 export async function getHistoricoRelatorio(page = 1, limit = 20): Promise<PaginatedResponse<RelatorioEnvio>> {
@@ -65,13 +70,15 @@ export async function getDestinatarios(): Promise<RelatorioDestinatario[]> {
   return apiGet<RelatorioDestinatario[]>("/relatorio/destinatarios")
 }
 
-export async function createDestinatario(dados: { email: string; nome?: string }): Promise<RelatorioDestinatario> {
+/** Precisa de e-mail e/ou telefone (telefone com DDD; o backend normaliza). */
+export async function createDestinatario(dados: { email?: string; telefone?: string; nome?: string }): Promise<RelatorioDestinatario> {
   return apiPost<RelatorioDestinatario>("/relatorio/destinatarios", dados)
 }
 
+/** `email: null` / `telefone: null` limpam o contato (precisa sobrar um dos dois). */
 export async function updateDestinatario(
   id: number,
-  dados: { email?: string; nome?: string; ativo?: boolean },
+  dados: { email?: string | null; telefone?: string | null; nome?: string; ativo?: boolean },
 ): Promise<RelatorioDestinatario> {
   return apiPatch<RelatorioDestinatario>(`/relatorio/destinatarios/${id}`, dados)
 }

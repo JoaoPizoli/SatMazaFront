@@ -26,14 +26,21 @@ import {
     mensagemDeErro,
     updateDestinatario,
 } from "@/lib/api/relatorio"
+import { formatarTelefoneBR, normalizarTelefone } from "@/lib/telefone"
 import type { RelatorioDestinatario } from "@/types"
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+/** Como o destinatário é citado em mensagens: e-mail, ou o telefone quando só tem WhatsApp. */
+export function rotuloDestinatario(destinatario: RelatorioDestinatario): string {
+    return destinatario.email ?? (destinatario.telefone ? formatarTelefoneBR(destinatario.telefone) : `#${destinatario.id}`)
+}
 
 export function RelatorioDestinatariosTab() {
     const [destinatarios, setDestinatarios] = useState<RelatorioDestinatario[]>([])
     const [carregando, setCarregando] = useState(true)
     const [email, setEmail] = useState("")
+    const [telefone, setTelefone] = useState("")
     const [nome, setNome] = useState("")
     const [salvando, setSalvando] = useState(false)
     const [alterando, setAlterando] = useState<number | null>(null)
@@ -58,17 +65,33 @@ export function RelatorioDestinatariosTab() {
     async function adicionar(e: React.FormEvent) {
         e.preventDefault()
         const emailNormalizado = email.trim().toLowerCase()
-        if (!EMAIL_REGEX.test(emailNormalizado)) {
+        const telefoneDigitado = telefone.trim()
+        if (!emailNormalizado && !telefoneDigitado) {
+            setAviso({ tipo: "error", mensagem: "Informe um e-mail ou um telefone de WhatsApp." })
+            return
+        }
+        if (emailNormalizado && !EMAIL_REGEX.test(emailNormalizado)) {
             setAviso({ tipo: "error", mensagem: "Informe um e-mail válido." })
             return
         }
+        const telefoneNormalizado = telefoneDigitado ? normalizarTelefone(telefoneDigitado) : null
+        if (telefoneDigitado && !telefoneNormalizado) {
+            setAviso({ tipo: "error", mensagem: "Telefone inválido: informe DDD e número (ex.: 11 99999-8888)." })
+            return
+        }
+
         setSalvando(true)
         setAviso(null)
         try {
-            await createDestinatario({ email: emailNormalizado, nome: nome.trim() || undefined })
+            const criado = await createDestinatario({
+                email: emailNormalizado || undefined,
+                telefone: telefoneNormalizado || undefined,
+                nome: nome.trim() || undefined,
+            })
             setEmail("")
+            setTelefone("")
             setNome("")
-            setAviso({ tipo: "success", mensagem: `${emailNormalizado} foi adicionado à lista.` })
+            setAviso({ tipo: "success", mensagem: `${rotuloDestinatario(criado)} foi adicionado à lista.` })
             await carregar()
         } catch (error) {
             setAviso({ tipo: "error", mensagem: mensagemDeErro(error) })
@@ -98,13 +121,16 @@ export function RelatorioDestinatariosTab() {
         try {
             await deleteDestinatario(alvo.id)
             setDestinatarios((lista) => lista.filter((d) => d.id !== alvo.id))
-            setAviso({ tipo: "success", mensagem: `${alvo.email} foi removido da lista.` })
+            setAviso({ tipo: "success", mensagem: `${rotuloDestinatario(alvo)} foi removido da lista.` })
         } catch (error) {
             setAviso({ tipo: "error", mensagem: mensagemDeErro(error) })
         }
     }
 
-    const ativos = destinatarios.filter((d) => d.ativo).length
+    const ativos = destinatarios.filter((d) => d.ativo)
+    const ativosEmail = ativos.filter((d) => d.email).length
+    const ativosWhatsapp = ativos.filter((d) => d.telefone).length
+    const podeAdicionar = !salvando && (email.trim().length > 0 || telefone.trim().length > 0)
 
     return (
         <div className="space-y-4">
@@ -112,11 +138,11 @@ export function RelatorioDestinatariosTab() {
                 <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Adicionar destinatário</CardTitle>
                     <CardDescription>
-                        Os destinatários ativos recebem o envio automático mensal e os envios para a “lista configurada”.
+                        Informe e-mail, telefone de WhatsApp ou os dois. Os destinatários ativos recebem o envio automático mensal e os envios para a “lista configurada”.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
-                    <form onSubmit={adicionar} className="grid grid-cols-1 items-end gap-4 sm:grid-cols-[2fr_2fr_auto]">
+                    <form onSubmit={adicionar} className="grid grid-cols-1 items-end gap-4 sm:grid-cols-2 lg:grid-cols-[2fr_1.5fr_1.5fr_auto]">
                         <div className="space-y-2">
                             <Label htmlFor="destinatario-email">E-mail</Label>
                             <Input
@@ -125,6 +151,17 @@ export function RelatorioDestinatariosTab() {
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
                                 placeholder="gerencia@empresa.com.br"
+                                autoComplete="off"
+                            />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="destinatario-telefone">WhatsApp</Label>
+                            <Input
+                                id="destinatario-telefone"
+                                value={telefone}
+                                onChange={(e) => setTelefone(e.target.value)}
+                                placeholder="11 99999-8888"
+                                inputMode="tel"
                                 autoComplete="off"
                             />
                         </div>
@@ -138,7 +175,7 @@ export function RelatorioDestinatariosTab() {
                                 maxLength={120}
                             />
                         </div>
-                        <Button type="submit" disabled={salvando || !email.trim()}>
+                        <Button type="submit" disabled={!podeAdicionar}>
                             {salvando ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
                             Adicionar
                         </Button>
@@ -156,7 +193,8 @@ export function RelatorioDestinatariosTab() {
                 <CardHeader className="pb-3">
                     <CardTitle className="text-lg">Destinatários</CardTitle>
                     <CardDescription>
-                        {ativos} {ativos === 1 ? "ativo" : "ativos"} de {destinatarios.length}. Desative para pausar o recebimento sem remover o e-mail.
+                        {ativos.length} {ativos.length === 1 ? "ativo" : "ativos"} de {destinatarios.length} ({ativosEmail} por e-mail, {ativosWhatsapp} por WhatsApp).
+                        Desative para pausar o recebimento sem remover o contato.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -165,6 +203,7 @@ export function RelatorioDestinatariosTab() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead>E-mail</TableHead>
+                                    <TableHead>WhatsApp</TableHead>
                                     <TableHead className="hidden sm:table-cell">Nome</TableHead>
                                     <TableHead>Recebe</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
@@ -173,25 +212,28 @@ export function RelatorioDestinatariosTab() {
                             <TableBody>
                                 {carregando ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center">Carregando...</TableCell>
+                                        <TableCell colSpan={5} className="h-24 text-center">Carregando...</TableCell>
                                     </TableRow>
                                 ) : destinatarios.length === 0 ? (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="h-24 text-center text-muted-foreground">
+                                        <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
                                             Nenhum destinatário cadastrado.
                                         </TableCell>
                                     </TableRow>
                                 ) : (
                                     destinatarios.map((destinatario) => (
                                         <TableRow key={destinatario.id} className={destinatario.ativo ? undefined : "text-muted-foreground"}>
-                                            <TableCell className="font-medium break-all">{destinatario.email}</TableCell>
+                                            <TableCell className="font-medium break-all">{destinatario.email ?? <span className="text-muted-foreground">—</span>}</TableCell>
+                                            <TableCell className="whitespace-nowrap">
+                                                {destinatario.telefone ? formatarTelefoneBR(destinatario.telefone) : <span className="text-muted-foreground">—</span>}
+                                            </TableCell>
                                             <TableCell className="hidden sm:table-cell">{destinatario.nome || "—"}</TableCell>
                                             <TableCell>
                                                 <Switch
                                                     checked={destinatario.ativo}
                                                     disabled={alterando === destinatario.id}
                                                     onCheckedChange={(ativo) => alternarAtivo(destinatario, ativo)}
-                                                    aria-label={`${destinatario.ativo ? "Desativar" : "Ativar"} ${destinatario.email}`}
+                                                    aria-label={`${destinatario.ativo ? "Desativar" : "Ativar"} ${rotuloDestinatario(destinatario)}`}
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right">
@@ -200,7 +242,7 @@ export function RelatorioDestinatariosTab() {
                                                     size="icon"
                                                     className="text-destructive hover:text-destructive"
                                                     onClick={() => setParaRemover(destinatario)}
-                                                    aria-label={`Remover ${destinatario.email}`}
+                                                    aria-label={`Remover ${rotuloDestinatario(destinatario)}`}
                                                 >
                                                     <Trash2 className="h-4 w-4" />
                                                 </Button>
@@ -219,7 +261,7 @@ export function RelatorioDestinatariosTab() {
                     <AlertDialogHeader>
                         <AlertDialogTitle>Remover destinatário?</AlertDialogTitle>
                         <AlertDialogDescription>
-                            <strong>{paraRemover?.email}</strong> deixará de receber o relatório de SATs. Para apenas pausar, desative o recebimento.
+                            <strong>{paraRemover ? rotuloDestinatario(paraRemover) : ""}</strong> deixará de receber o relatório de SATs. Para apenas pausar, desative o recebimento.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>

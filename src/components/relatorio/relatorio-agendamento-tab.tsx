@@ -9,10 +9,12 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Switch } from "@/components/ui/switch"
 import { FeedbackBanner } from "@/components/feedback-banner"
-import { StatusEnvioBadge } from "@/components/relatorio/relatorio-historico-tab"
+import { CanalEnvioBadge, StatusEnvioBadge } from "@/components/relatorio/relatorio-historico-tab"
+import { WhatsappSituacaoBadge } from "@/components/relatorio/relatorio-whatsapp-tab"
 import { getConfiguracaoRelatorio, mensagemDeErro, updateConfiguracaoRelatorio } from "@/lib/api/relatorio"
 import { formatarDataBR, formatarDataHoraBR, rotuloPeriodo } from "@/lib/relatorio-periodo"
-import type { RelatorioConfiguracaoResposta, RelatorioProximoEnvio } from "@/types"
+import { formatarTelefoneBR } from "@/lib/telefone"
+import type { RelatorioConfiguracaoResposta, RelatorioEnvio, RelatorioProximoEnvio } from "@/types"
 
 const DIAS = Array.from({ length: 28 }, (_, i) => i + 1)
 const HORAS = Array.from({ length: 24 }, (_, i) => i)
@@ -28,6 +30,21 @@ function textoProximoEnvio(proximo: RelatorioProximoEnvio): string {
         return `O horário de ${quando} já passou: o relatório de ${proximo.periodo.rotulo} será enviado nos próximos minutos.`
     }
     return `${quando} — relatório de ${proximo.periodo.rotulo}.`
+}
+
+function UltimoEnvio({ envio }: { envio: RelatorioEnvio | null }) {
+    if (!envio) return <p className="text-muted-foreground">Nenhum envio automático ainda.</p>
+    return (
+        <div className="space-y-1 text-muted-foreground">
+            <div className="flex flex-wrap items-center gap-2">
+                <CanalEnvioBadge canal={envio.canal} />
+                <StatusEnvioBadge status={envio.status} />
+                <span>{formatarDataHoraBR(envio.createdAt)}</span>
+            </div>
+            <p>Relatório de {rotuloPeriodo(envio.periodo_inicio, envio.periodo_fim)}</p>
+            {envio.erro && <p className="text-xs text-destructive break-words">{envio.erro.slice(0, 300)}</p>}
+        </div>
+    )
 }
 
 export function RelatorioAgendamentoTab() {
@@ -87,7 +104,8 @@ export function RelatorioAgendamentoTab() {
         )
     }
 
-    const ultimo = resposta?.ultimoEnvioAutomatico
+    const canais = resposta?.canais
+    const whatsappPendente = !!canais && canais.whatsapp.destinatariosAtivos > 0 && canais.whatsapp.situacao !== "CONECTADO"
 
     return (
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
@@ -95,7 +113,7 @@ export function RelatorioAgendamentoTab() {
                 <CardHeader>
                     <CardTitle className="text-lg">Envio automático mensal</CardTitle>
                     <CardDescription>
-                        Todo mês, no dia e hora escolhidos (horário de Brasília), o relatório do mês anterior completo é enviado aos destinatários ativos.
+                        Todo mês, no dia e hora escolhidos (horário de Brasília), o relatório do mês anterior completo é enviado aos destinatários ativos por e-mail e por WhatsApp.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-6">
@@ -176,37 +194,52 @@ export function RelatorioAgendamentoTab() {
 
                     {configuracao?.envio_automatico_ativo && resposta?.destinatariosAtivos === 0 && (
                         <FeedbackBanner variant="warning">
-                            Nenhum destinatário ativo: o envio automático não acontecerá até que um e-mail seja ativado.
+                            Nenhum destinatário ativo: o envio automático não acontecerá até que um contato seja ativado.
+                        </FeedbackBanner>
+                    )}
+
+                    {whatsappPendente && (
+                        <FeedbackBanner variant="warning">
+                            Há {canais.whatsapp.destinatariosAtivos} {canais.whatsapp.destinatariosAtivos === 1 ? "número ativo" : "números ativos"}, mas o WhatsApp não está conectado.
+                            Conecte o número na aba <strong>WhatsApp</strong> para o envio automático por esse canal funcionar.
                         </FeedbackBanner>
                     )}
 
                     <div className="space-y-1">
                         <p className="font-medium">Destinatários ativos</p>
-                        <p className="text-muted-foreground">{resposta?.destinatariosAtivos ?? 0}</p>
+                        <p className="text-muted-foreground">
+                            E-mail: {canais?.email.destinatariosAtivos ?? 0} · WhatsApp: {canais?.whatsapp.destinatariosAtivos ?? 0}
+                        </p>
+                    </div>
+
+                    {canais && (
+                        <div className="space-y-1">
+                            <p className="font-medium">Número do WhatsApp</p>
+                            <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+                                <WhatsappSituacaoBadge situacao={canais.whatsapp.situacao} />
+                                {canais.whatsapp.numero && <span>{formatarTelefoneBR(canais.whatsapp.numero)}</span>}
+                                {!canais.whatsapp.ativo && <span className="text-xs">(canal desligado neste servidor)</span>}
+                            </div>
+                        </div>
+                    )}
+
+                    <div className="space-y-1">
+                        <p className="font-medium">Último envio automático por e-mail</p>
+                        <UltimoEnvio envio={canais?.email.ultimoEnvioAutomatico ?? null} />
                     </div>
 
                     <div className="space-y-1">
-                        <p className="font-medium">Último envio automático</p>
-                        {ultimo ? (
-                            <div className="space-y-1 text-muted-foreground">
-                                <div className="flex flex-wrap items-center gap-2">
-                                    <StatusEnvioBadge status={ultimo.status} />
-                                    <span>{formatarDataHoraBR(ultimo.createdAt)}</span>
-                                </div>
-                                <p>Relatório de {rotuloPeriodo(ultimo.periodo_inicio, ultimo.periodo_fim)}</p>
-                                {ultimo.erro && <p className="text-xs text-destructive break-words">{ultimo.erro.slice(0, 300)}</p>}
-                            </div>
-                        ) : (
-                            <p className="text-muted-foreground">Nenhum envio automático ainda.</p>
-                        )}
+                        <p className="font-medium">Último envio automático por WhatsApp</p>
+                        <UltimoEnvio envio={canais?.whatsapp.ultimoEnvioAutomatico ?? null} />
                     </div>
 
                     <div className="space-y-1 border-t pt-4 text-xs text-muted-foreground">
                         <p className="font-medium text-foreground">Como funciona</p>
                         <ul className="list-disc space-y-1 pl-4">
                             <li>O relatório enviado é sempre o do mês anterior completo.</li>
+                            <li>Quem tem e-mail recebe por e-mail; quem tem telefone recebe pelo WhatsApp (PDF com resumo). Cada canal tem seu registro no histórico.</li>
                             <li>Se o servidor estiver fora do ar no horário, o envio acontece assim que ele voltar (dentro do mesmo mês).</li>
-                            <li>Em caso de falha, o sistema tenta de novo até 3 vezes, com pelo menos 1 hora entre as tentativas.</li>
+                            <li>Em caso de falha, o sistema tenta de novo até 3 vezes por canal, com pelo menos 1 hora entre as tentativas. Se o WhatsApp não estiver pareado, esse canal é pulado.</li>
                             <li>
                                 Ao ligar, vale a partir do próximo horário agendado — o mês anterior não é enviado retroativamente.
                                 Para enviá-lo, use <Badge variant="outline" className="mx-0.5 px-1.5 py-0 text-[11px]">Enviar relatório</Badge> na aba Relatório.

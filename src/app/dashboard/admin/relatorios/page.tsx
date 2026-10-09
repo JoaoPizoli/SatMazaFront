@@ -2,11 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { CalendarClock, FileChartColumn, History, Users } from "lucide-react"
+import { CalendarClock, FileChartColumn, History, MessageCircle, Users } from "lucide-react"
 import { PageTemplate } from "@/components/page-template"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RelatorioTab } from "@/components/relatorio/relatorio-tab"
 import { RelatorioDestinatariosTab } from "@/components/relatorio/relatorio-destinatarios-tab"
+import { RelatorioWhatsappTab } from "@/components/relatorio/relatorio-whatsapp-tab"
 import { RelatorioAgendamentoTab } from "@/components/relatorio/relatorio-agendamento-tab"
 import { RelatorioHistoricoTab } from "@/components/relatorio/relatorio-historico-tab"
 import { useAuth } from "@/contexts/auth-context"
@@ -34,7 +35,7 @@ function RelatoriosConteudo({ userEmail }: { userEmail: string | null }) {
     return (
         <PageTemplate
             title="Relatório de SATs"
-            description="Indicadores do período, envio por e-mail e envio automático mensal"
+            description="Indicadores do período, envio por e-mail e WhatsApp e envio automático mensal"
         >
             <Tabs value={aba} onValueChange={setAba}>
                 <TabsList className="h-auto flex-wrap">
@@ -45,6 +46,10 @@ function RelatoriosConteudo({ userEmail }: { userEmail: string | null }) {
                     <TabsTrigger value="destinatarios">
                         <Users />
                         Destinatários
+                    </TabsTrigger>
+                    <TabsTrigger value="whatsapp">
+                        <MessageCircle />
+                        WhatsApp
                     </TabsTrigger>
                     <TabsTrigger value="agendamento">
                         <CalendarClock />
@@ -63,6 +68,9 @@ function RelatoriosConteudo({ userEmail }: { userEmail: string | null }) {
                 {/* As demais abas recarregam os dados sempre que são abertas */}
                 <TabsContent value="destinatarios" className="mt-4">
                     <RelatorioDestinatariosTab />
+                </TabsContent>
+                <TabsContent value="whatsapp" className="mt-4">
+                    <RelatorioWhatsappTab />
                 </TabsContent>
                 <TabsContent value="agendamento" className="mt-4">
                     <RelatorioAgendamentoTab />

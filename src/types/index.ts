@@ -357,7 +357,8 @@ export type RelatorioPreview = {
 
 export type RelatorioDestinatario = {
   id: number
-  email: string
+  email: string | null
+  telefone: string | null // E.164 sem "+", ex.: 5511999998888
   nome: string | null
   ativo: boolean
   createdAt: string
@@ -375,15 +376,18 @@ export type RelatorioConfiguracao = {
 }
 
 export type RelatorioEnvioTipo = "AUTOMATICO" | "MANUAL"
-export type RelatorioEnvioStatus = "PROCESSANDO" | "SUCESSO" | "FALHA"
+export type RelatorioEnvioCanal = "EMAIL" | "WHATSAPP"
+/** PARCIAL = parte dos números do WhatsApp falhou (estado final) */
+export type RelatorioEnvioStatus = "PROCESSANDO" | "SUCESSO" | "PARCIAL" | "FALHA"
 
 export type RelatorioEnvio = {
   id: string
   tipo: RelatorioEnvioTipo
+  canal: RelatorioEnvioCanal
   status: RelatorioEnvioStatus
   periodo_inicio: string // 'AAAA-MM-DD'
   periodo_fim: string
-  destinatarios: string[]
+  destinatarios: string[] // e-mails (EMAIL) ou telefones (WHATSAPP)
   total_sats: number | null
   erro: string | null
   enviado_por: string | null // null = envio automático
@@ -400,9 +404,38 @@ export type RelatorioProximoEnvio = {
   novaTentativaEm?: string // ISO — só em RETENTATIVA
 }
 
+export type WhatsappSituacao = "DESCONECTADO" | "AGUARDANDO_QR" | "CONECTANDO" | "CONECTADO"
+
+export type WhatsappStatus = {
+  ativo: boolean // false = WHATSAPP_ATIVO desligou o canal nesta instância
+  situacao: WhatsappSituacao
+  credenciaisSalvas: boolean
+  qr: string | null // data URL (PNG), só em AGUARDANDO_QR
+  qrGeradoEm: string | null
+  numero: string | null
+  nome: string | null
+  conectadoEm: string | null
+  ultimoErro: string | null
+}
+
+export type RelatorioSituacaoCanal = {
+  destinatariosAtivos: number
+  ultimoEnvioAutomatico: RelatorioEnvio | null
+}
+
 export type RelatorioConfiguracaoResposta = {
   configuracao: RelatorioConfiguracao
   destinatariosAtivos: number
+  /** Do canal principal (e-mail; WhatsApp se só houver telefones) */
   proximoEnvio: RelatorioProximoEnvio | null
   ultimoEnvioAutomatico: RelatorioEnvio | null
+  canais: {
+    email: RelatorioSituacaoCanal
+    whatsapp: RelatorioSituacaoCanal & {
+      ativo: boolean
+      situacao: WhatsappSituacao
+      credenciaisSalvas: boolean
+      numero: string | null
+    }
+  }
 }
