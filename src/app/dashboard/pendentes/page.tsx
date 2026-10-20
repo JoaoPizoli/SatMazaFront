@@ -67,6 +67,7 @@ export default function PendentesPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         onSend={handleSend}
+        onDeleted={refetch}
       />
     </PageTemplate>
   )

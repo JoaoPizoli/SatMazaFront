@@ -35,6 +35,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { SatDeleteSection } from "@/components/sat-delete-section"
 import {
   Card,
   CardContent,
@@ -187,6 +188,8 @@ interface SatSendDialogProps {
   open: boolean
   onOpenChange: (open: boolean) => void
   onSend: (satId: string, laboratorio: SATDestino) => void
+  /** Chamado após o ADMIN excluir a SAT (ex.: recarregar a lista). */
+  onDeleted?: (satId: string) => void
 }
 
 // ─── Componente Principal ────────────────────────────────────────────────────
@@ -196,6 +199,7 @@ export function SatSendDialog({
   open,
   onOpenChange,
   onSend,
+  onDeleted,
 }: SatSendDialogProps) {
   const [selectedLab, setSelectedLab] = useState<SATDestino | "">("")
   const [confirmOpen, setConfirmOpen] = useState(false)
@@ -324,6 +328,13 @@ export function SatSendDialog({
               </div>
             </CardContent>
           </Card>
+
+          {/* ── Exclusão definitiva (só aparece para ADMIN) ───────────── */}
+          <SatDeleteSection
+            sat={sat}
+            onDeleted={onDeleted}
+            onClose={() => onOpenChange(false)}
+          />
 
           {/* ── Ações ─────────────────────────────────────────────────── */}
           <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">

@@ -89,6 +89,8 @@ export async function createSat(data: {
   representante_id: number
   telefone: string
   reclamacao: string
+  /** UUID gerado uma vez por preenchimento do formulário: reenvios devolvem a SAT já criada em vez de duplicar. */
+  chave_idempotencia?: string
 }): Promise<SAT> {
   return apiPost<SAT>("/sat", data)
 }

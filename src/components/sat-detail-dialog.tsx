@@ -72,6 +72,7 @@ import {
   AVT_LAUDO_ACCEPT,
 } from "@/lib/api/media"
 import { downloadSatPdf, downloadSatAberturaPdf } from "@/lib/api/sat"
+import { SatDeleteSection } from "@/components/sat-delete-section"
 
 // ─── Tipos do Dialog ─────────────────────────────────────────────────────────
 
@@ -86,6 +87,8 @@ interface SatDetailDialogProps {
   onSave?: (avtData: AVTFormData) => void
   onChangeStatus?: (satId: string, avtData: AVTFormData) => void
   onRedirect?: (satId: string) => void
+  /** Chamado após o ADMIN excluir a SAT (ex.: recarregar a lista). */
+  onDeleted?: (satId: string) => void
 }
 
 /** Formata validade para exibição: "yyyy-mm-dd" ou "yyyy-mm" → "MM/AAAA" */
@@ -344,6 +347,7 @@ export function SatDetailDialog({
   onSave,
   onChangeStatus,
   onRedirect,
+  onDeleted,
 }: SatDetailDialogProps) {
   const [formData, setFormData] = useState<AVTFormData>(() =>
     getInitialFormData(avt, sat)
@@ -878,6 +882,13 @@ export function SatDetailDialog({
               </Card>
             </>
           )}
+
+          {/* ── Exclusão definitiva (só aparece para ADMIN) ───────────── */}
+          <SatDeleteSection
+            sat={sat}
+            onDeleted={onDeleted}
+            onClose={() => onOpenChange(false)}
+          />
 
           {/* ── Ações ─────────────────────────────────────────────────── */}
           {mode === "criar" && (

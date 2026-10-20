@@ -28,7 +28,7 @@ export default function HistoricoFinalizadasPage() {
 
   const isOrquestrador = user?.tipo === UserRole.ORQUESTRADOR || user?.tipo === UserRole.ADMIN
 
-  const { sats: allSats, isLoading } = useSats({ status: SATStatus.FINALIZADA })
+  const { sats: allSats, isLoading, refetch } = useSats({ status: SATStatus.FINALIZADA })
 
   const allFinalizadas = useMemo(() => {
     let sats = allSats
@@ -134,6 +134,7 @@ export default function HistoricoFinalizadasPage() {
         mode="visualizar"
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onDeleted={refetch}
       />
     </PageTemplate>
   )

@@ -21,7 +21,7 @@ export default function SatsEmLaboratorioPage() {
   const [dataInicio, setDataInicio] = useState("")
   const [dataFim, setDataFim] = useState("")
 
-  const { sats: allSats, isLoading } = useSats()
+  const { sats: allSats, isLoading, refetch } = useSats()
 
   // SATs enviadas para laboratório (ENVIADO_BAGUA, ENVIADO_BSOLVENTE ou EM_ANALISE)
   const allEmLaboratorio = useMemo(
@@ -122,6 +122,7 @@ export default function SatsEmLaboratorioPage() {
         mode="visualizar"
         open={dialogOpen}
         onOpenChange={setDialogOpen}
+        onDeleted={refetch}
       />
     </PageTemplate>
   )

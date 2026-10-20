@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/contexts/auth-context"
 import { PageTemplate } from "@/components/page-template"
@@ -10,7 +10,7 @@ import { createSat } from "@/lib/api/sat"
 import { uploadMedia, validateFile, SAT_EVIDENCE_ACCEPT, MAX_FILE_SIZE } from "@/lib/api/media"
 import { buscarRepresentante } from "@/lib/api/erp"
 import { ApiError } from "@/lib/api"
-import type { ErpCliente, ErpRepresentante, ErpProduto } from "@/types"
+import type { ErpCliente, ErpRepresentante, ErpProduto, SAT } from "@/types"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { MonthYearInput } from "@/components/ui/month-year-input"
@@ -41,6 +41,18 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog"
 
+/** UUID v4 para a chave de idempotência. crypto.randomUUID só existe em contexto seguro (HTTPS/localhost). */
+function gerarUuid(): string {
+  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
+    return crypto.randomUUID()
+  }
+  return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, (c) => {
+    const r = Math.floor(Math.random() * 16)
+    const v = c === "x" ? r : (r % 4) + 8
+    return v.toString(16)
+  })
+}
+
 export default function NovaSatPage() {
   const { user } = useAuth()
   const router = useRouter()
@@ -68,6 +80,15 @@ export default function NovaSatPage() {
   const [filePreviews, setFilePreviews] = useState<string[]>([])
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+  // Trava síncrona contra duplo clique/duplo Enter: isSubmitting só desabilita o botão no próximo render.
+  const submitLockRef = useRef(false)
+  // Uma chave por preenchimento do formulário: o backend devolve a SAT já criada se ela for reenviada.
+  const [chaveIdempotencia] = useState<string>(gerarUuid)
+  // SAT criada numa tentativa anterior cujo upload de evidências falhou: não criar de novo, só retomar o envio.
+  const [satCriada, setSatCriada] = useState<SAT | null>(null)
+  // Evidências já enviadas com sucesso (ref = fonte da verdade no loop assíncrono; state = exibição).
+  const enviadosRef = useRef<Set<File>>(new Set())
+  const [arquivosEnviados, setArquivosEnviados] = useState<Set<File>>(() => new Set())
   const [uploadProgress, setUploadProgress] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState(false)
@@ -182,7 +203,8 @@ export default function NovaSatPage() {
   }, [])
 
   const handleRemoveFile = useCallback((index: number) => {
-    setSelectedFiles((prev) => prev.filter((_, i) => i !== index))
+    // Evidência já anexada à SAT não pode ser removida daqui
+    setSelectedFiles((prev) => prev.filter((f, i) => i !== index || enviadosRef.current.has(f)))
   }, [])
 
   function formatFileSize(bytes: number): string {
@@ -196,15 +218,17 @@ export default function NovaSatPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!user) return
+    if (submitLockRef.current) return
 
     setError(null)
 
-    if (!produtos.trim()) {
+    // Com a SAT já criada, só falta reenviar as evidências: os dados dela não mudam mais.
+    if (!satCriada && !produtos.trim()) {
       setError("Selecione um produto")
       return
     }
 
-    if (!semLote) {
+    if (!satCriada && !semLote) {
       const validLotes = lotes.filter((l) => l.lote.trim() !== "")
       if (validLotes.length === 0) {
         setError("Informe pelo menos um lote")
@@ -231,29 +255,41 @@ export default function NovaSatPage() {
       return
     }
 
+    submitLockRef.current = true
     setIsSubmitting(true)
 
-    try {
-      // 1. Criar a SAT
-      setUploadProgress("Criando SAT...")
-      const validLotes = semLote ? [] : lotes.filter((l) => l.lote.trim() !== "")
-      const sat = await createSat({
-        cliente,
-        cidade: cidade || "A definir",
-        produtos,
-        quantidade,
-        sem_lote: semLote,
-        lotes: validLotes,
-        contato,
-        representante_id: user.id,
-        telefone,
-        reclamacao,
-      })
+    // Fica fora do try para o catch saber se a SAT já existe (o state satCriada ainda estaria defasado).
+    let sat: SAT | null = satCriada
 
-      // 2. Upload das evidências
-      for (let i = 0; i < selectedFiles.length; i++) {
-        setUploadProgress(`Enviando evidência ${i + 1} de ${selectedFiles.length}...`)
-        await uploadMedia(selectedFiles[i], sat.id, 'sat_evidencia')
+    try {
+      // 1. Criar a SAT — uma única vez por preenchimento. Se uma tentativa anterior criou a SAT
+      //    e falhou no upload, pula direto para as evidências em vez de criar outra SAT.
+      if (!sat) {
+        setUploadProgress("Criando SAT...")
+        const validLotes = semLote ? [] : lotes.filter((l) => l.lote.trim() !== "")
+        sat = await createSat({
+          cliente,
+          cidade: cidade || "A definir",
+          produtos,
+          quantidade,
+          sem_lote: semLote,
+          lotes: validLotes,
+          contato,
+          representante_id: user.id,
+          telefone,
+          reclamacao,
+          chave_idempotencia: chaveIdempotencia,
+        })
+        setSatCriada(sat)
+      }
+
+      // 2. Upload das evidências ainda não enviadas
+      const pendentes = selectedFiles.filter((f) => !enviadosRef.current.has(f))
+      for (const file of pendentes) {
+        setUploadProgress(`Enviando evidência ${enviadosRef.current.size + 1} de ${selectedFiles.length}...`)
+        await uploadMedia(file, sat.id, 'sat_evidencia')
+        enviadosRef.current.add(file)
+        setArquivosEnviados(new Set(enviadosRef.current))
       }
 
       setUploadProgress("")
@@ -270,19 +306,29 @@ export default function NovaSatPage() {
       }, 1000)
     } catch (err) {
       setUploadProgress("")
-      if (err instanceof ApiError) {
-        setError(err.message)
-      } else if (err instanceof Error) {
-        setError(err.message)
+      const mensagem =
+        err instanceof ApiError || err instanceof Error
+          ? err.message
+          : "Erro ao criar SAT. Tente novamente."
+      if (sat) {
+        setError(
+          `A SAT ${sat.codigo} já foi criada, mas o envio das evidências falhou ` +
+          `(${enviadosRef.current.size} de ${selectedFiles.length} enviadas): ${mensagem} ` +
+          `Verifique sua conexão e clique em "Reenviar evidências" — a SAT não será duplicada.`,
+        )
       } else {
-        setError("Erro ao criar SAT. Tente novamente.")
+        setError(mensagem)
       }
     } finally {
+      submitLockRef.current = false
       setIsSubmitting(false)
     }
   }
 
   if (!user) return null
+
+  // Depois que a SAT existe, os dados dela ficam travados: só as evidências ainda podem ser enviadas.
+  const dadosBloqueados = isSubmitting || satCriada !== null
 
   const representanteDisplay = repLoading
     ? "Carregando..."
@@ -328,7 +374,7 @@ export default function NovaSatPage() {
               <ClientSearchSelect
                 onSelect={handleClienteSelect}
                 onClear={() => { setCliente(""); setCidade(""); }}
-                disabled={isSubmitting}
+                disabled={dadosBloqueados}
               />
               {cliente && (
                 <p className="text-xs text-muted-foreground">
@@ -357,7 +403,7 @@ export default function NovaSatPage() {
               <ProductSearchSelect
                 onSelect={handleProdutoSelect}
                 onClear={() => setProdutos("")}
-                disabled={isSubmitting}
+                disabled={dadosBloqueados}
               />
               {produtos && (
                 <p className="text-xs text-muted-foreground">
@@ -376,7 +422,7 @@ export default function NovaSatPage() {
                 value={quantidade}
                 onChange={(e) => setQuantidade(Number(e.target.value))}
                 required
-                disabled={isSubmitting}
+                disabled={dadosBloqueados}
               />
             </div>
 
@@ -392,14 +438,14 @@ export default function NovaSatPage() {
                         onChange={(e) => handleLoteChange(index, 'lote', e.target.value)}
                         placeholder="Lote (000000-000)"
                         maxLength={10}
-                        disabled={isSubmitting || semLote}
+                        disabled={dadosBloqueados || semLote}
                       />
                     </div>
                     <div className="w-36">
                       <MonthYearInput
                         value={item.validade}
                         onChange={(v) => handleLoteChange(index, 'validade', v)}
-                        disabled={isSubmitting || semLote}
+                        disabled={dadosBloqueados || semLote}
                         required={!semLote}
                       />
                     </div>
@@ -409,7 +455,7 @@ export default function NovaSatPage() {
                         variant="outline"
                         size="icon"
                         onClick={() => handleRemoveLote(index)}
-                        disabled={isSubmitting || semLote}
+                        disabled={dadosBloqueados || semLote}
                         className="mt-0"
                       >
                         <Trash2 className="h-4 w-4" />
@@ -442,7 +488,7 @@ export default function NovaSatPage() {
                   variant="outline"
                   size="sm"
                   onClick={handleAddLote}
-                  disabled={isSubmitting}
+                  disabled={dadosBloqueados}
                   className="mt-2"
                 >
                   <Plus className="mr-1 h-4 w-4" />
@@ -461,7 +507,7 @@ export default function NovaSatPage() {
                       setLotes([{ lote: "", validade: "" }])
                     }
                   }}
-                  disabled={isSubmitting}
+                  disabled={dadosBloqueados}
                 />
                 <Label htmlFor="sem-lote" className="text-sm font-normal cursor-pointer">
                   Não possui lote?
@@ -481,7 +527,7 @@ export default function NovaSatPage() {
                   onChange={(e) => setContato(e.target.value)}
                   placeholder="Ex: João Silva"
                   required
-                  disabled={isSubmitting}
+                  disabled={dadosBloqueados}
                 />
               </div>
               <div className="space-y-2">
@@ -493,7 +539,7 @@ export default function NovaSatPage() {
                   placeholder="(00) 00000-0000"
                   maxLength={15}
                   required
-                  disabled={isSubmitting}
+                  disabled={dadosBloqueados}
                 />
               </div>
             </div>
@@ -510,7 +556,7 @@ export default function NovaSatPage() {
                 placeholder="Descreva detalhadamente o problema relatado pelo cliente..."
                 rows={5}
                 required
-                disabled={isSubmitting}
+                disabled={dadosBloqueados}
               />
             </div>
 
@@ -534,20 +580,30 @@ export default function NovaSatPage() {
                     const isImage = file.type.startsWith("image/")
                     const isVideo = file.type.startsWith("video/")
                     const isAudio = file.type.startsWith("audio/")
+                    const jaEnviado = arquivosEnviados.has(file)
                     return (
                       <div
                         key={`${file.name}-${idx}`}
                         className="group relative flex flex-col items-center rounded-lg border bg-muted/30 p-2"
                       >
-                        {/* Botão remover */}
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveFile(idx)}
-                          className="absolute -top-2 -right-2 z-10 rounded-full bg-destructive text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                          disabled={isSubmitting}
-                        >
-                          <X className="h-3 w-3" />
-                        </button>
+                        {/* Evidência já anexada à SAT: mostra confirmação em vez do botão remover */}
+                        {jaEnviado ? (
+                          <span
+                            className="absolute -top-2 -right-2 z-10 rounded-full bg-background text-green-600"
+                            title="Evidência já enviada"
+                          >
+                            <CheckCircle2 className="h-5 w-5" />
+                          </span>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveFile(idx)}
+                            className="absolute -top-2 -right-2 z-10 rounded-full bg-destructive text-white p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                            disabled={isSubmitting}
+                          >
+                            <X className="h-3 w-3" />
+                          </button>
+                        )}
                         <div className="w-full aspect-square rounded-md overflow-hidden bg-muted flex items-center justify-center mb-2">
                           {isImage && filePreviews[idx] ? (
                             <img
@@ -641,6 +697,8 @@ export default function NovaSatPage() {
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 {uploadProgress || "Criando SAT..."}
               </>
+            ) : satCriada ? (
+              "Reenviar evidências"
             ) : (
               "Criar SAT"
             )}
