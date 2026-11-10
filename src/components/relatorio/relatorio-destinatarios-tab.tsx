@@ -1,7 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
-import { Loader2, Plus, Trash2 } from "lucide-react"
+import { Loader2, Pencil, Plus, Trash2 } from "lucide-react"
 import {
     AlertDialog,
     AlertDialogAction,
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
@@ -36,6 +37,19 @@ export function rotuloDestinatario(destinatario: RelatorioDestinatario): string 
     return destinatario.email ?? (destinatario.telefone ? formatarTelefoneBR(destinatario.telefone) : `#${destinatario.id}`)
 }
 
+type ContatoValidado = { email: string | null; telefone: string | null }
+
+/** E-mail e/ou telefone digitados → valores normalizados como o backend grava, ou a mensagem de erro. */
+function validarContato(email: string, telefone: string): ContatoValidado | { erro: string } {
+    const emailNormalizado = email.trim().toLowerCase()
+    const telefoneDigitado = telefone.trim()
+    if (!emailNormalizado && !telefoneDigitado) return { erro: "Informe um e-mail ou um telefone de WhatsApp." }
+    if (emailNormalizado && !EMAIL_REGEX.test(emailNormalizado)) return { erro: "Informe um e-mail válido." }
+    const telefoneNormalizado = telefoneDigitado ? normalizarTelefone(telefoneDigitado) : null
+    if (telefoneDigitado && !telefoneNormalizado) return { erro: "Telefone inválido: informe DDD e número (ex.: 11 99999-8888)." }
+    return { email: emailNormalizado || null, telefone: telefoneNormalizado }
+}
+
 export function RelatorioDestinatariosTab() {
     const [destinatarios, setDestinatarios] = useState<RelatorioDestinatario[]>([])
     const [carregando, setCarregando] = useState(true)
@@ -44,6 +58,7 @@ export function RelatorioDestinatariosTab() {
     const [nome, setNome] = useState("")
     const [salvando, setSalvando] = useState(false)
     const [alterando, setAlterando] = useState<number | null>(null)
+    const [paraEditar, setParaEditar] = useState<RelatorioDestinatario | null>(null)
     const [paraRemover, setParaRemover] = useState<RelatorioDestinatario | null>(null)
     const [aviso, setAviso] = useState<{ tipo: "success" | "error"; mensagem: string } | null>(null)
 
@@ -64,19 +79,9 @@ export function RelatorioDestinatariosTab() {
 
     async function adicionar(e: React.FormEvent) {
         e.preventDefault()
-        const emailNormalizado = email.trim().toLowerCase()
-        const telefoneDigitado = telefone.trim()
-        if (!emailNormalizado && !telefoneDigitado) {
-            setAviso({ tipo: "error", mensagem: "Informe um e-mail ou um telefone de WhatsApp." })
-            return
-        }
-        if (emailNormalizado && !EMAIL_REGEX.test(emailNormalizado)) {
-            setAviso({ tipo: "error", mensagem: "Informe um e-mail válido." })
-            return
-        }
-        const telefoneNormalizado = telefoneDigitado ? normalizarTelefone(telefoneDigitado) : null
-        if (telefoneDigitado && !telefoneNormalizado) {
-            setAviso({ tipo: "error", mensagem: "Telefone inválido: informe DDD e número (ex.: 11 99999-8888)." })
+        const contato = validarContato(email, telefone)
+        if ("erro" in contato) {
+            setAviso({ tipo: "error", mensagem: contato.erro })
             return
         }
 
@@ -84,8 +89,8 @@ export function RelatorioDestinatariosTab() {
         setAviso(null)
         try {
             const criado = await createDestinatario({
-                email: emailNormalizado || undefined,
-                telefone: telefoneNormalizado || undefined,
+                email: contato.email ?? undefined,
+                telefone: contato.telefone ?? undefined,
                 nome: nome.trim() || undefined,
             })
             setEmail("")
@@ -111,6 +116,13 @@ export function RelatorioDestinatariosTab() {
         } finally {
             setAlterando(null)
         }
+    }
+
+    function aoSalvarEdicao(atualizado: RelatorioDestinatario) {
+        // Troca no lugar (como o Switch), sem recarregar a lista nem mudar a ordem
+        setDestinatarios((lista) => lista.map((d) => (d.id === atualizado.id ? atualizado : d)))
+        setParaEditar(null)
+        setAviso({ tipo: "success", mensagem: `${rotuloDestinatario(atualizado)} foi atualizado.` })
     }
 
     async function remover() {
@@ -237,15 +249,25 @@ export function RelatorioDestinatariosTab() {
                                                 />
                                             </TableCell>
                                             <TableCell className="text-right">
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="text-destructive hover:text-destructive"
-                                                    onClick={() => setParaRemover(destinatario)}
-                                                    aria-label={`Remover ${rotuloDestinatario(destinatario)}`}
-                                                >
-                                                    <Trash2 className="h-4 w-4" />
-                                                </Button>
+                                                <div className="flex justify-end gap-1">
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        onClick={() => setParaEditar(destinatario)}
+                                                        aria-label={`Editar ${rotuloDestinatario(destinatario)}`}
+                                                    >
+                                                        <Pencil className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        variant="ghost"
+                                                        size="icon"
+                                                        className="text-destructive hover:text-destructive"
+                                                        onClick={() => setParaRemover(destinatario)}
+                                                        aria-label={`Remover ${rotuloDestinatario(destinatario)}`}
+                                                    >
+                                                        <Trash2 className="h-4 w-4" />
+                                                    </Button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
@@ -255,6 +277,15 @@ export function RelatorioDestinatariosTab() {
                     </div>
                 </CardContent>
             </Card>
+
+            {paraEditar && (
+                <EditarDestinatarioDialog
+                    key={paraEditar.id}
+                    destinatario={paraEditar}
+                    onClose={() => setParaEditar(null)}
+                    onSalvo={aoSalvarEdicao}
+                />
+            )}
 
             <AlertDialog open={!!paraRemover} onOpenChange={(aberto) => !aberto && setParaRemover(null)}>
                 <AlertDialogContent>
@@ -273,5 +304,116 @@ export function RelatorioDestinatariosTab() {
                 </AlertDialogContent>
             </AlertDialog>
         </div>
+    )
+}
+
+type AlteracoesDestinatario = { email?: string | null; telefone?: string | null; nome?: string }
+
+/**
+ * Edita e-mail, WhatsApp e nome de um destinatário. Envia só o que mudou e não mexe em "Recebe"
+ * (ativo) nem no histórico de envios. Remonte com `key` a cada abertura.
+ */
+function EditarDestinatarioDialog({
+    destinatario,
+    onClose,
+    onSalvo,
+}: {
+    destinatario: RelatorioDestinatario
+    onClose: () => void
+    onSalvo: (atualizado: RelatorioDestinatario) => void
+}) {
+    const [email, setEmail] = useState(destinatario.email ?? "")
+    const [telefone, setTelefone] = useState(destinatario.telefone ? formatarTelefoneBR(destinatario.telefone) : "")
+    const [nome, setNome] = useState(destinatario.nome ?? "")
+    const [salvando, setSalvando] = useState(false)
+    const [erro, setErro] = useState<string | null>(null)
+
+    async function salvar(e: React.FormEvent) {
+        e.preventDefault()
+        const contato = validarContato(email, telefone)
+        if ("erro" in contato) {
+            setErro(contato.erro)
+            return
+        }
+
+        // Campo esvaziado: null limpa o contato e "" limpa o nome (o backend grava null)
+        const alteracoes: AlteracoesDestinatario = {}
+        if (contato.email !== destinatario.email) alteracoes.email = contato.email
+        if (contato.telefone !== destinatario.telefone) alteracoes.telefone = contato.telefone
+        if (nome.trim() !== (destinatario.nome ?? "")) alteracoes.nome = nome.trim()
+        if (Object.keys(alteracoes).length === 0) {
+            onClose()
+            return
+        }
+
+        setSalvando(true)
+        setErro(null)
+        try {
+            onSalvo(await updateDestinatario(destinatario.id, alteracoes))
+        } catch (error) {
+            setErro(mensagemDeErro(error))
+        } finally {
+            setSalvando(false)
+        }
+    }
+
+    return (
+        <Dialog open onOpenChange={(aberto) => !aberto && !salvando && onClose()}>
+            <DialogContent className="sm:max-w-[480px]">
+                <form onSubmit={salvar} className="grid gap-4">
+                    <DialogHeader>
+                        <DialogTitle>Editar destinatário</DialogTitle>
+                        <DialogDescription>
+                            Informe e-mail, telefone de WhatsApp ou os dois. A opção “Recebe” e o histórico de envios continuam como estão.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-2">
+                        <Label htmlFor="editar-destinatario-email">E-mail</Label>
+                        <Input
+                            id="editar-destinatario-email"
+                            type="email"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
+                            placeholder="gerencia@empresa.com.br"
+                            autoComplete="off"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="editar-destinatario-telefone">WhatsApp</Label>
+                        <Input
+                            id="editar-destinatario-telefone"
+                            value={telefone}
+                            onChange={(e) => setTelefone(e.target.value)}
+                            placeholder="11 99999-8888"
+                            inputMode="tel"
+                            autoComplete="off"
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="editar-destinatario-nome">Nome (opcional)</Label>
+                        <Input
+                            id="editar-destinatario-nome"
+                            value={nome}
+                            onChange={(e) => setNome(e.target.value)}
+                            placeholder="Ex.: Gerência Comercial"
+                            maxLength={120}
+                        />
+                    </div>
+
+                    {erro && <FeedbackBanner variant="error">{erro}</FeedbackBanner>}
+
+                    <DialogFooter>
+                        <Button type="button" variant="outline" disabled={salvando} onClick={onClose}>
+                            Cancelar
+                        </Button>
+                        <Button type="submit" disabled={salvando}>
+                            {salvando && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            {salvando ? "Salvando..." : "Salvar"}
+                        </Button>
+                    </DialogFooter>
+                </form>
+            </DialogContent>
+        </Dialog>
     )
 }
